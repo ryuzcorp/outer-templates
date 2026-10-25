@@ -117,10 +117,14 @@ const emitCelldConfig = () => ({
 // declare a SESSION KV namespace the site never uses; if the site needs
 // sessions later, drop this and declare the KV namespace in
 // `void.config.ts`.
+// `prerenderEnvironment: "node"` renders the static pages with Node at
+// build time instead of booting workerd: Outer's build sandbox can't run
+// workerd (the build hangs at "prerendering static routes"). Server routes
+// (`prerender = false`) still run in the Worker runtime as usual.
 export default defineConfig({
   output: "static",
   session: false,
-  adapter: cloudflare({ configPath: "./.void-wrangler.jsonc" }),
+  adapter: cloudflare({ configPath: "./.void-wrangler.jsonc", prerenderEnvironment: "node" }),
   integrations: [ilha(), emitCelldConfig()],
   vite: {
     plugins: [voidPlugin(), tailwindcss()],
