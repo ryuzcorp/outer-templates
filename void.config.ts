@@ -13,7 +13,7 @@ export default defineConfig({
     // (https://void.cloud/integrations/frameworks/astro).
     compatibility_flags: ["nodejs_als"],
     // The site's D1 database, provisioned by Outer on first deploy. Server
-    // routes read it via `Astro.locals.runtime.env.DB` (see
+    // routes read it via `import { env } from "cloudflare:workers"` (see
     // `src/pages/api/newsletter.ts`). `migrations_dir` is the repo folder
     // `void db generate` writes and `void db migrate` (and dev-server
     // startup) applies locally.

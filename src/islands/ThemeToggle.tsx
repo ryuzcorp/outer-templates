@@ -1,5 +1,7 @@
 import { atom, watch } from "ilha";
 
+import { readStoredTheme, resolveTheme, writeStoredTheme } from "../lib/theme.ts";
+
 // A theme toggle island: reads the saved theme after mount (never during
 // server render — `localStorage` doesn't exist there) and flips the
 // daisyUI theme between `light` and `dark`.
@@ -11,18 +13,17 @@ export default function ThemeToggle() {
       return;
     }
     mounted.set(true);
-    const saved = window.localStorage.getItem("theme");
-    if (saved === "light" || saved === "dark") {
-      theme.set(saved);
-      document.documentElement.dataset.theme = saved;
-    }
+    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+    const effective = resolveTheme(readStoredTheme(window.localStorage), prefersDark);
+    theme.set(effective);
+    document.documentElement.dataset.theme = effective;
   });
 
   function toggle() {
     const next = theme() === "light" ? "dark" : "light";
     theme.set(next);
     if (typeof window !== "undefined" && typeof document !== "undefined") {
-      window.localStorage.setItem("theme", next);
+      writeStoredTheme(window.localStorage, next);
       document.documentElement.dataset.theme = next;
     }
   }

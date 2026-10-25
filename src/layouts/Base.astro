@@ -1,6 +1,6 @@
 ---
+import ThemeToggle from "../islands/ThemeToggle.tsx";
 import "../styles/global.css";
-
 interface Props {
   title: string;
   description: string;
@@ -35,6 +35,8 @@ const { title, description } = Astro.props;
           <nav class="flex gap-1">
             <a href="/" class="btn btn-ghost btn-sm">Home</a>
             <a href="/blog" class="btn btn-ghost btn-sm">Blog</a>
+            {/* Hydrates in place; static button HTML until it loads. */}
+            <ThemeToggle client:load />
           </nav>
         </div>
       </header>

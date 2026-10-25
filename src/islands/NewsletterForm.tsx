@@ -1,7 +1,6 @@
 import { atom } from "ilha";
 
-import { newsletterError } from "../lib/newsletter.ts";
-
+import { newsletterError, postSubscription } from "../lib/newsletter.ts";
 // A newsletter signup island: static HTML on first paint, hydrated in the
 // browser via its `client:load` directive (see `src/pages/index.astro`).
 // Islands are plain Ilha components with JSON-only props — never forward an
@@ -22,14 +21,12 @@ export default function NewsletterForm() {
     }
     pending.set(true);
     try {
-      const res = await fetch("/api/newsletter", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email: email().trim() }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { message?: string } | null;
-        error.set(body?.message ?? "Couldn't save that email. Try again.");
+      // A rejected request resolves to a message (never throws), so an
+      // offline visitor sees *Couldn't save that email* instead of a
+      // spinner that just stops.
+      const failure = await postSubscription(email());
+      if (failure) {
+        error.set(failure);
         return;
       }
       done.set(true);
