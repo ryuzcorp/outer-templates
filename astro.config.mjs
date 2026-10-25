@@ -121,8 +121,14 @@ const emitCelldConfig = () => ({
 // build time instead of booting workerd: Outer's build sandbox can't run
 // workerd (the build hangs at "prerendering static routes"). Server routes
 // (`prerender = false`) still run in the Worker runtime as usual.
+// `build.format: "file"` writes `blog.html` and `blog/hello.html` (not
+// `blog/index.html`), and `trailingSlash: "never"` keeps every link and
+// route on the no-slash spelling. Outer's runtime serves `/blog` from
+// `blog.html` reliably; folder indexes behind `/blog/` don't resolve there.
 export default defineConfig({
   output: "static",
+  trailingSlash: "never",
+  build: { format: "file" },
   session: false,
   adapter: cloudflare({ configPath: "./.void-wrangler.jsonc", prerenderEnvironment: "node" }),
   integrations: [ilha(), emitCelldConfig()],

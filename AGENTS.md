@@ -87,21 +87,22 @@ bindings opts out:
 ```ts
 // src/pages/api/newsletter.ts
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ locals, request }) => {
-  const { DB } = locals.runtime.env;
+export const POST: APIRoute = async () => {
+  const { DB } = env;
   const { results } = await DB.prepare("SELECT id FROM newsletter").all();
   return Response.json({ count: results.length });
 };
 ```
 
-- `export const prerender = false` is the whole switch. Without it,
-  `locals.runtime` doesn't exist and the build fails where the route is
-  prerendered.
-- Read bindings only through `Astro.locals.runtime.env` (`locals.runtime.env`
-  in endpoints). It works in dev and production.
+- `export const prerender = false` is the whole switch. Without it, the
+  route is rendered once at build time, where bindings don't exist.
+- Read bindings only through `import { env } from "cloudflare:workers"`.
+  `Astro.locals.runtime.env` was removed in Astro 6 and throws at runtime.
+  Declare new bindings on `Cloudflare.Env` in `src/env.d.ts`.
 - Keep server routes few and small: one D1 database, one R2 bucket per site.
   Anything shaped like an app (auth, live state, many tables) belongs in
   the app template.

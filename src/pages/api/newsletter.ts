@@ -1,9 +1,10 @@
 import type { APIRoute } from "astro";
+import { env } from "cloudflare:workers";
 
 import { newsletterError } from "../../lib/newsletter.ts";
 
 // A server route: it opts out of prerendering, so it runs in the Worker and
-// sees bindings via `locals.runtime.env`. The homepage island POSTs here;
+// reads bindings from `cloudflare:workers`. The homepage island POSTs here;
 // the table lives in `db/migrations/0001_newsletter.sql` (Outer applies
 // committed migrations on deploy before the new code goes live). The CREATE
 // below stays as a backstop — local dev without migrations would otherwise
@@ -18,8 +19,8 @@ async function database(env: { DB: D1Database }) {
   return env.DB;
 }
 
-export const POST: APIRoute = async ({ locals, request }) => {
-  const { DB } = locals.runtime.env;
+export const POST: APIRoute = async ({ request }) => {
+  const { DB } = env;
   const body = (await request.json().catch(() => null)) as { email?: string } | null;
   const message = newsletterError(body?.email ?? "");
   if (message) {

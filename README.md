@@ -48,7 +48,7 @@ schema is `src/content.config.ts`.
 
 The site keeps one D1 database (`void.config.ts`, `d1_databases`): the
 newsletter table in `db/migrations/0001_newsletter.sql`. Read the binding
-in a server route with `Astro.locals.runtime.env.DB` (see
+in a server route with `env.DB` from `cloudflare:workers` (see
 `src/pages/api/newsletter.ts`). Never edit an applied migration — add a new
 one with `void db generate`.
 
