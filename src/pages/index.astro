@@ -1,0 +1,56 @@
+---
+import Base from "../layouts/Base.astro";
+import NewsletterForm from "../islands/NewsletterForm.tsx";
+---
+
+<Base
+  title="Outer Site"
+  description="An Outer website: prerendered Astro pages with Ilha islands."
+>
+  <div class="flex flex-col gap-8">
+    <section class="card bg-base-100 shadow-sm">
+      <div class="card-body gap-4">
+        <h1 class="card-title text-3xl">A site that loads fast</h1>
+        <p class="opacity-70">
+          Mostly static pages, prerendered at build time. Replace this page
+          with the landing page, portfolio, or event page the site needs —
+          the layout, styles, and head tags stay.
+        </p>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <a href="/blog" class="btn btn-primary">Read the blog</a>
+          <a href="#newsletter" class="btn btn-ghost">Get updates</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-lg">Static first</h2>
+          <p class="opacity-70">Pages prerender to HTML. No server runs for them.</p>
+        </div>
+      </div>
+      <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-lg">Islands</h2>
+          <p class="opacity-70">Interactive parts hydrate in place with a client directive.</p>
+        </div>
+      </div>
+      <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-lg">One database</h2>
+          <p class="opacity-70">A server route writes signups to D1. Nothing more.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="newsletter" class="card bg-base-100 shadow-sm">
+      <div class="card-body gap-4">
+        <h2 class="card-title text-2xl">Get updates</h2>
+        {/* Static HTML until it loads, then the island hydrates in place.
+          Island props are JSON only — never forward a `<slot />` into one. */}
+        <NewsletterForm client:load />
+      </div>
+    </section>
+  </div>
+</Base>

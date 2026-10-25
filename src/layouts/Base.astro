@@ -1,0 +1,51 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- `charset` and `viewport` stay first: without the viewport, phones
+      render a zoomed-out 980px desktop layout. -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Outer" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="flex min-h-dvh flex-col">
+      <header class="navbar bg-base-100 shadow-sm">
+        <div class="mx-auto flex w-full max-w-2xl items-center justify-between px-4">
+          <a href="/" class="btn btn-ghost px-2 text-lg">Outer Site</a>
+          <nav class="flex gap-1">
+            <a href="/" class="btn btn-ghost btn-sm">Home</a>
+            <a href="/blog" class="btn btn-ghost btn-sm">Blog</a>
+          </nav>
+        </div>
+      </header>
+      <main class="mx-auto w-full max-w-2xl grow px-4 py-8">
+        <slot />
+      </main>
+      <footer class="footer footer-center bg-base-200 p-4 text-sm">
+        <p class="block">
+          Built with <a class="link" href="https://ilha.build">Ilha</a>
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>
