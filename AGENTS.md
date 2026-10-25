@@ -156,6 +156,23 @@ migration files in `db/migrations/` (`void db generate` writes
 `{ results }`, `first()` one row, `run()` writes. Verify against
 https://void.cloud/guide/database and https://celld.dev/docs/services/d1/.
 
+## Durable Objects
+
+Declare classes under `durable_objects` in `void.config.ts`. Outer's
+console lists each class's instances. To show what an instance holds, the
+Worker answers `GET /do/<scope>?read=1`, where `<scope>` is the name you
+pass to `idFromName`:
+
+- Forward it to that object (`env.ROOMS.get(env.ROOMS.idFromName(scope))`)
+  and return a small JSON snapshot of its state.
+- Read only: `?read=1` must never create, change or count anything. Return
+  404 for scopes you don't recognize.
+- Keep it under 5 s and small; the console shows the first 2,000
+  characters. Never include secrets or other people's data.
+
+Without the route the console still lists instances; it just can't show
+their contents.
+
 ## PWA
 
 Every app is installable: `vite-plugin-pwa` (`registerType: autoUpdate`,
