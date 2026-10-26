@@ -1,4 +1,4 @@
-import { Link } from "@ilha/void";
+import { Link, useRouter } from "@ilha/void";
 import { ErrorBoundary } from "ilha";
 import type { View } from "ilha";
 
@@ -22,6 +22,88 @@ export function BrandMark() {
     >
       {initials(appBrand.name)}
     </span>
+  );
+}
+
+function ChecklistIcon({ class: cls }: { class?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={cls ?? "h-5 w-5"}
+    >
+      <path d="M9 11.5 11 13.5 15 9.5" />
+      <path d="M12 21.5c-1.5 0-2.8-.3-4-1L4 21.5l1-4c-.7-1.2-1-2.5-1-4 0-5 4-9.5 8-9.5s8 4.5 8 9.5-4 12-8 12Z" />
+    </svg>
+  );
+}
+
+function SettingsIcon({ class: cls }: { class?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={cls ?? "h-5 w-5"}
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.04-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09A1.7 1.7 0 0 0 10.14 3V3a2 2 0 1 1 4 0v.09c0 .68.4 1.3 1.04 1.56.6.25 1.3.1 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09c.25.6.88 1.04 1.56 1.04H21a2 2 0 1 1 0 4h-.09c-.68 0-1.3.4-1.51 1.04Z" />
+    </svg>
+  );
+}
+
+const NAV = [
+  { href: "/", label: "Checklist", Icon: ChecklistIcon },
+  { href: "/settings", label: "Settings", Icon: SettingsIcon },
+];
+
+// One nav link with a clear active state: accent-ink text plus a small
+// indicator. `vertical` renders the phone tab-bar item (icon over label);
+// the default renders the header/sidebar row (icon beside label).
+function NavLink({
+  href,
+  label,
+  Icon,
+  active,
+  vertical,
+}: {
+  href: string;
+  label: string;
+  Icon: (props: { class?: string }) => View;
+  active: boolean;
+  vertical?: boolean;
+}) {
+  const base = vertical
+    ? "relative flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1 text-xs font-medium"
+    : "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium";
+  const tone = active ? "text-ink" : "opacity-70 hover:opacity-100";
+  const indicator = vertical ? (
+    <span
+      aria-hidden="true"
+      class={`h-1 w-8 rounded-full transition-colors ${active ? "bg-primary" : "bg-transparent"}`}
+    />
+  ) : (
+    <span
+      aria-hidden="true"
+      class={`w-1 self-stretch rounded-full transition-colors ${active ? "bg-primary" : "bg-transparent"}`}
+    />
+  );
+  return (
+    <Link href={href} aria-current={active ? "page" : undefined} class={`${base} ${tone} nav-link`}>
+      {vertical ? null : indicator}
+      <Icon />
+      {label}
+      {vertical ? indicator : null}
+    </Link>
   );
 }
 
@@ -49,59 +131,94 @@ function ErrorFallback({ reset }: { error: Error; reset(): void }) {
 }
 
 export default function Layout({ children }: { children?: View }) {
+  // The router knows the current path on the server and the client, so the
+  // nav highlights the open page after a full load and after client-side
+  // navigation alike.
+  const path = useRouter().path;
   return (
     // The accent is the primary color in both themes: daisyUI reads
-    // `--color-primary` for every `btn-primary`, badge, and checkbox.
+    // `--color-primary` for every `btn-primary`, badge, checkbox, and
+    // progress bar.
     <div
-      class="flex min-h-dvh flex-col"
+      class="accent-scope flex min-h-dvh flex-col lg:flex-row"
       style={`--color-primary:${appBrand.accent};--color-primary-content:${onAccent(appBrand.accent)}`}
     >
-      <header class="navbar bg-base-100 shadow-sm">
+      {/* Phone + tablet header. Desktop keeps the brand in the sidebar. */}
+      <header class="navbar bg-base-100 shadow-sm lg:hidden">
         <div class="mx-auto flex w-full max-w-2xl items-center justify-between px-4">
           <Link href="/" class="btn btn-ghost flex items-center gap-2 px-2 text-lg">
             <BrandMark />
             {appBrand.name}
           </Link>
-          {/* Desktop nav. Phones get the bottom tab bar below instead. */}
+          {/* Tablet widths have room for the links up top; phones get the
+            bottom tab bar instead. */}
           <nav aria-label="Primary" class="hidden gap-1 sm:flex">
-            <Link href="/" class="btn btn-ghost">
-              Checklist
-            </Link>
-            <Link href="/settings" class="btn btn-ghost">
-              Settings
-            </Link>
+            {NAV.map(({ href, label, Icon }) => (
+              <NavLink key={href} href={href} label={label} Icon={Icon} active={path === href} />
+            ))}
           </nav>
         </div>
       </header>
-      {/* Bottom padding clears the fixed tab bar on phones. */}
-      <main class="mx-auto w-full max-w-2xl grow px-4 pt-8 pb-28 sm:pb-8">
-        <ErrorBoundary fallback={ErrorFallback}>{children}</ErrorBoundary>
-      </main>
-      <footer class="footer footer-center bg-base-200 p-4 text-sm">
-        {/* daisyUI makes footer children grids; `block` keeps the line inline. */}
-        <p class="block">
-          © {new Date().getFullYear()} {appBrand.name} · Built with{" "}
+      {/* Desktop sidebar: brand, nav, and the credit line at the bottom. */}
+      <aside class="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-6 border-r border-base-300 bg-base-100 p-6 lg:flex">
+        <Link href="/" class="flex items-center gap-2 text-lg font-semibold">
+          <BrandMark />
+          {appBrand.name}
+        </Link>
+        <nav aria-label="Primary" class="flex flex-col gap-1">
+          {NAV.map(({ href, label, Icon }) => (
+            <NavLink key={href} href={href} label={label} Icon={Icon} active={path === href} />
+          ))}
+        </nav>
+        <p class="mt-auto text-sm opacity-70">
+          Built with{" "}
           <a class="link" href="https://ilha.build">
             Ilha
           </a>
         </p>
-      </footer>
-      {/* Phone tab bar. It floats above `env(safe-area-inset-bottom)` plus
-        the Free-badge space the proxy reserves (`--outer-badge-space`): Pro
-        pages never set the variable, so it falls back to 0. Never cover or
-        restyle `#outer-badge` — it is Outer's, not the app's. */}
+      </aside>
+      <div class="flex min-w-0 flex-1 flex-col">
+        {/* Bottom padding clears the fixed tab bar on phones: its own
+          height plus the safe area plus the Free-badge strip. */}
+        <main class="mx-auto w-full max-w-2xl grow px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom)+var(--outer-badge-space,0px))] sm:pt-8 sm:pb-8">
+          <ErrorBoundary fallback={ErrorFallback}>{children}</ErrorBoundary>
+        </main>
+        {/* No footer on phones: the tab bar owns the bottom edge, and the
+          credit line lives on the Settings page instead. */}
+        <footer class="footer footer-center hidden bg-base-200 p-4 text-sm sm:grid">
+          {/* daisyUI makes footer children grids; `block` keeps the line inline. */}
+          <p class="block">
+            © {new Date().getFullYear()} {appBrand.name} · Built with{" "}
+            <a class="link" href="https://ilha.build">
+              Ilha
+            </a>
+          </p>
+        </footer>
+      </div>
+      {/* Phone tab bar. Pinned to the very bottom of the screen; the inner
+        padding holds the safe area plus the Free-badge space the proxy
+        reserves (`--outer-badge-space`), so the badge sits in that strip
+        below the tab items and covers nothing. Pro pages never set the
+        variable, so it falls back to 0. Never cover or restyle
+        `#outer-badge` — it is Outer's, not the app's. */}
       <nav
         aria-label="Primary"
-        class="fixed inset-x-0 z-40 border-t border-base-300 bg-base-100/95 backdrop-blur sm:hidden"
-        style="bottom:calc(env(safe-area-inset-bottom) + var(--outer-badge-space, 0px))"
+        class="fixed inset-x-0 bottom-0 z-40 border-t border-base-300 bg-base-100/95 backdrop-blur sm:hidden"
       >
-        <div class="grid grid-cols-2 gap-1 p-2">
-          <Link href="/" class="btn btn-ghost">
-            Checklist
-          </Link>
-          <Link href="/settings" class="btn btn-ghost">
-            Settings
-          </Link>
+        <div
+          class="mx-auto grid max-w-2xl grid-cols-2 gap-1 px-3 pt-1"
+          style="padding-bottom:calc(env(safe-area-inset-bottom) + var(--outer-badge-space, 0px))"
+        >
+          {NAV.map(({ href, label, Icon }) => (
+            <NavLink
+              key={href}
+              href={href}
+              label={label}
+              Icon={Icon}
+              active={path === href}
+              vertical
+            />
+          ))}
         </div>
       </nav>
     </div>

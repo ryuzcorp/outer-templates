@@ -4,7 +4,8 @@
 // rebrand, never the generated outputs. Base also sets the accent as the
 // primary color in both themes, and reserves no badge space itself: Outer's
 // proxy appends `#outer-badge` plus `--outer-badge-space` on Free pages,
-// and this layout keeps nothing fixed at the bottom that could cover it.
+// so the footer carries extra bottom padding and keeps its text centered,
+// clear of the bottom-right corner.
 import ThemeToggle from "../islands/ThemeToggle.tsx";
 import { initials, onAccent, siteBrand } from "../lib/brand.ts";
 import "../styles/global.css";
@@ -17,6 +18,16 @@ interface Props {
 
 const { title, description = siteBrand.description, image = "/og.svg" } = Astro.props;
 const fg = onAccent(siteBrand.accent);
+// `Astro.url.pathname` is the output file (`/index.html`, `/blog.html`),
+// not the route: strip the filename so links can compare against it. Posts
+// (`/blog/<slug>`) highlight their section's link too.
+const path = Astro.url.pathname.replace(/(\/index)?\.html$/, "") || "/";
+const links = [
+  { href: "/", label: "Home" },
+  { href: "/blog", label: "Blog" },
+  { href: "/about", label: "About" },
+];
+const isActive = (href: string) => path === href || (href !== "/" && path.startsWith(`${href}/`));
 ---
 
 <!doctype html>
@@ -53,8 +64,9 @@ const fg = onAccent(siteBrand.accent);
     <title>{title}</title>
   </head>
   <body>
+    
     <div
-      class="flex min-h-dvh flex-col"
+      class="accent-scope flex min-h-dvh flex-col"
       style={`--color-primary:${siteBrand.accent};--color-primary-content:${fg}`}
     >
       <header class="navbar bg-base-100 shadow-sm">
@@ -73,26 +85,70 @@ const fg = onAccent(siteBrand.accent);
             <div class="flex items-center gap-1">
               {/* Roomier screens get the links up top; phones get the row below. */}
               <nav class="hidden items-center gap-1 sm:flex" aria-label="Primary">
-                <a href="/" class="btn btn-ghost">Home</a>
-                <a href="/blog" class="btn btn-ghost">Blog</a>
-                <a href="/about" class="btn btn-ghost">About</a>
+                {
+                  links.map((link) => (
+                    <a
+                      href={link.href}
+                      aria-current={isActive(link.href) ? "page" : undefined}
+                      class={`btn btn-ghost ${isActive(link.href) ? "text-ink" : ""}`}
+                    >
+                      {link.label}
+                    </a>
+                  ))
+                }
               </nav>
               {/* Hydrates in place; static button HTML until it loads. */}
               <ThemeToggle client:load />
             </div>
           </div>
           <nav class="flex gap-1 overflow-x-auto pb-2 sm:hidden" aria-label="Primary">
-            <a href="/" class="btn btn-ghost flex-1">Home</a>
-            <a href="/blog" class="btn btn-ghost flex-1">Blog</a>
-            <a href="/about" class="btn btn-ghost flex-1">About</a>
+            {
+              links.map((link) => (
+                <a
+                  href={link.href}
+                  aria-current={isActive(link.href) ? "page" : undefined}
+                  class={`btn flex-1 ${isActive(link.href) ? "btn-primary" : "btn-ghost"}`}
+                >
+                  {link.label}
+                </a>
+              ))
+            }
           </nav>
         </div>
       </header>
-      <main class="mx-auto w-full max-w-2xl grow px-4 py-8">
+      <main class="mx-auto w-full max-w-2xl grow px-4 py-8 sm:py-12">
         <slot />
       </main>
-      <footer class="footer footer-center bg-base-200 p-4 text-sm">
-        <p class="block">
+      {/* Centered text stays clear of the bottom-right badge; the extra
+        bottom padding is the badge's own strip on Free pages, 0 on Pro. */}
+      <footer
+        class="flex flex-col items-center gap-4 bg-base-200 px-6 pt-6 text-center text-sm"
+        style="padding-bottom:calc(1.5rem + var(--outer-badge-space, 0px))"
+      >
+        <nav aria-label="Footer">
+          <ul class="flex flex-wrap justify-center gap-x-5 gap-y-2">
+            {
+              links.map((link) => (
+                <li>
+                  <a href={link.href} class="link link-hover">
+                    {link.label}
+                  </a>
+                </li>
+              ))
+            }
+            <li><a href="/rss.xml" class="link link-hover">RSS</a></li>
+          </ul>
+        </nav>
+        {/* Social placeholders: point them at the site's real profiles, or
+          delete the row. */}
+        <nav aria-label="Elsewhere">
+          <ul class="flex flex-wrap justify-center gap-x-5 gap-y-2 opacity-70">
+            <li><a href="https://example.com" class="link link-hover">Mastodon</a></li>
+            <li><a href="https://example.com" class="link link-hover">Are.na</a></li>
+            <li><a href="mailto:hello@example.com" class="link link-hover">Email</a></li>
+          </ul>
+        </nav>
+        <p class="opacity-70">
           © {new Date().getFullYear()} {siteBrand.name} · Built with{" "}
           <a class="link" href="https://ilha.build">Ilha</a>
         </p>

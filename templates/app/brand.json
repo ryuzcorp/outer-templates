@@ -1,6 +1,6 @@
 {
   "accent": "#4338ca",
-  "description": "An Outer app: a D1-backed checklist with server-rendered Ilha pages on Void.",
-  "name": "Outer App",
-  "shortName": "Outer"
+  "description": "Keep track of what needs doing.",
+  "name": "Checklist",
+  "shortName": "Checklist"
 }

@@ -1,7 +1,7 @@
 import { atom, watch } from "ilha";
 
 import { installApp, installReady, onInstallReady } from "./_pwa.ts";
-import { appBrand, onAccent } from "./_brand.ts";
+import { appBrand } from "./_brand.ts";
 
 type ThemeMode = "system" | "light" | "dark";
 
@@ -141,33 +141,13 @@ export default function Settings() {
       <section class="card bg-base-100 shadow-sm">
         <div class="card-body gap-2">
           <h2 class="card-title text-xl">About</h2>
-          <dl class="flex flex-col gap-1 text-sm">
-            <div class="flex gap-2">
-              <dt class="opacity-70">Name</dt>
-              <dd>{appBrand.name}</dd>
-            </div>
-            <div class="flex gap-2">
-              <dt class="opacity-70">Home-screen label</dt>
-              <dd>{appBrand.shortName}</dd>
-            </div>
-            <div class="flex items-center gap-2">
-              <dt class="opacity-70">Accent</dt>
-              <dd class="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  class="inline-block h-5 w-5 rounded"
-                  style={`background:${appBrand.accent};color:${onAccent(appBrand.accent)}`}
-                />
-                {appBrand.accent}
-              </dd>
-            </div>
-            <div class="flex gap-2">
-              <dt class="opacity-70">Description</dt>
-              <dd>{appBrand.description}</dd>
-            </div>
-          </dl>
+          <p class="text-lg font-medium">{appBrand.name}</p>
+          <p class="text-sm opacity-70">{appBrand.description}</p>
           <p class="text-sm opacity-70">
-            These come from brand.json — edit that file to rebrand the app.
+            Made with{" "}
+            <a class="link" href="https://ilha.build">
+              Ilha
+            </a>
           </p>
         </div>
       </section>

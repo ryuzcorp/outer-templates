@@ -1,81 +1,142 @@
 ---
-// The landing page: hero, feature grid, FAQ, and the newsletter signup.
-// Replace the copy with the site's own; the layout, head tags, and styles
-// stay. Island props are JSON only — never forward a `<slot />` into one.
+// The landing page: hero, services, testimonial, FAQ, and the newsletter
+// signup. The copy reads as a small studio's real site; an agent rebrands
+// it through brand.json and rewrites the words (see AGENTS.md). Island
+// props are JSON only — never forward a `<slot />` into one.
 import Base from "../layouts/Base.astro";
 import NewsletterForm from "../islands/NewsletterForm.tsx";
 import { pageTitle, siteBrand } from "../lib/brand.ts";
 
+const services = [
+  {
+    title: "Brand identity",
+    body: "A name, a mark, and a palette with opinions — so every page looks like it came from the same place.",
+    icon: "M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1",
+    circle: true,
+  },
+  {
+    title: "Websites that load fast",
+    body: "Pages ship as plain files, ready before you ask. No spinners, no waiting — your words arrive first.",
+    icon: "M13 2 4.5 13.5H11L9.5 22 19 10.5h-6.5L13 2Z",
+    circle: false,
+  },
+  {
+    title: "Words that read well",
+    body: "Essays and notes set in a comfortable measure, with reading times attached. Long reads welcome.",
+    icon: "M4 5h16M4 10h16M4 15h10M4 20h7",
+    circle: false,
+  },
+];
+
 const faqs = [
   {
-    q: "What is this site about?",
-    a: "Whatever the site needs: a landing page, a portfolio, an event page. Replace this answer with the site's own story.",
+    q: "Do you take on new projects?",
+    a: "A few each quarter. Write through the newsletter below and mention what you're making — every note gets a human reply.",
   },
   {
-    q: "How often do you post?",
-    a: "The blog sorts newest first and skips drafts. Delete the sample posts and write real ones — an empty posts folder builds a blog index that says there is nothing here yet.",
+    q: "How does a project usually run?",
+    a: "A short call, a one-page plan with a fixed price, then weekly builds you can click. You see progress from the first week.",
   },
   {
-    q: "How do I get updates?",
-    a: "Leave an email below. One row per address lands in D1 through a tiny server route; nothing else runs on a server.",
+    q: "How do I follow along?",
+    a: "Leave an email below. New posts and studio notes land in your inbox — about once a month, never more.",
   },
 ];
 ---
 
 <Base title={pageTitle()} description={siteBrand.description}>
-  <div class="flex flex-col gap-8">
-    <section class="card bg-base-100 shadow-sm">
-      <div class="card-body gap-4 py-10">
-        <h1 class="card-title text-4xl">{siteBrand.name}</h1>
-        <p class="text-lg opacity-70">
-          {siteBrand.description} Mostly static pages, prerendered at build time — replace
-          this hero with the landing the site needs.
+  <div class="flex flex-col gap-10 sm:gap-14">
+    {/* Hero: large type over an accent wash, one primary CTA, one quiet link. */}
+    <section class="relative overflow-hidden rounded-3xl bg-base-100 shadow-sm">
+      <div
+        aria-hidden="true"
+        class="hero-glow absolute -top-24 -right-24 h-72 w-72 rounded-full sm:h-96 sm:w-96"
+      >
+      </div>
+      <div class="relative flex flex-col gap-5 px-6 py-12 sm:px-12 sm:py-20">
+        <p class="text-sm font-semibold tracking-widest text-ink uppercase">
+          {siteBrand.name} — studio notes &amp; projects
         </p>
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <a href="/blog" class="btn btn-primary">Read the blog</a>
-          <a href="#newsletter" class="btn btn-ghost">Get updates</a>
+        <h1 class="max-w-xl text-4xl leading-[1.05] font-extrabold tracking-tight sm:text-6xl">
+          Calm work for a loud internet.
+        </h1>
+        <p class="max-w-lg text-lg opacity-70">{siteBrand.description}</p>
+        <div class="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center">
+          <a href="/blog" class="btn btn-primary btn-lg">Read the journal</a>
+          <a href="/about" class="btn btn-ghost btn-lg">About the studio →</a>
         </div>
       </div>
     </section>
 
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title text-lg">Static first</h2>
-          <p class="opacity-70">Pages prerender to HTML. No server runs for them.</p>
+    <section aria-label="What the studio does" class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {
+        services.map((service) => (
+          <div class="card bg-base-100 shadow-sm">
+            <div class="card-body gap-3">
+              <span aria-hidden="true" class="text-ink">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="h-7 w-7"
+                >
+                  {service.circle ? <circle cx="12" cy="12" r="3.2" /> : null}
+                  <path d={service.icon} />
+                </svg>
+              </span>
+              <h2 class="card-title text-lg">{service.title}</h2>
+              <p class="opacity-70">{service.body}</p>
+            </div>
+          </div>
+        ))
+      }
+    </section>
+
+    {/* Social proof: one strong quote beats a wall of logos at this size. */}
+    <section class="card border border-primary/20 bg-base-100 shadow-sm">
+      <div class="card-body items-center gap-3 py-8 text-center">
+        <div aria-hidden="true" class="flex gap-1 text-ink">
+          {
+            [0, 1, 2, 3, 4].map(() => (
+              <svg viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+                <path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.5L12 17.5l-5.9 3.1 1.2-6.5L2.5 9.5l6.6-.9Z" />
+              </svg>
+            ))
+          }
         </div>
-      </div>
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title text-lg">Islands</h2>
-          <p class="opacity-70">Interactive parts hydrate in place with a client directive.</p>
-        </div>
-      </div>
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title text-lg">One database</h2>
-          <p class="opacity-70">A server route writes signups to D1. Nothing more.</p>
-        </div>
+        <blockquote class="max-w-xl text-xl leading-snug font-medium text-balance sm:text-2xl">
+          “They rebuilt our site in a month. It loads instantly, and enquiries
+          doubled by spring.”
+        </blockquote>
+        <p class="text-sm opacity-70">Mara Ellingsen — founder, Fern &amp; Field</p>
       </div>
     </section>
 
     <section class="card bg-base-100 shadow-sm">
       <div class="card-body gap-4">
-        <h2 class="card-title text-2xl">Questions, answered</h2>
+        <h2 class="card-title text-2xl tracking-tight">Questions, answered</h2>
         <div class="flex flex-col gap-2">
-          {faqs.map((faq) => (
-            <details class="collapse collapse-arrow bg-base-200">
-              <summary class="collapse-title font-medium">{faq.q}</summary>
-              <div class="collapse-content opacity-70">{faq.a}</div>
-            </details>
-          ))}
+          {
+            faqs.map((faq) => (
+              <details class="collapse collapse-arrow bg-base-200">
+                <summary class="collapse-title font-medium">{faq.q}</summary>
+                <div class="collapse-content opacity-70">{faq.a}</div>
+              </details>
+            ))
+          }
         </div>
       </div>
     </section>
 
     <section id="newsletter" class="card bg-base-100 shadow-sm">
       <div class="card-body gap-4">
-        <h2 class="card-title text-2xl">Get updates</h2>
+        <h2 class="card-title text-2xl tracking-tight">Get the notes</h2>
+        <p class="opacity-70">
+          One short email a month: new posts, studio experiments, nothing else.
+        </p>
         {/* Static HTML until it loads, then the island hydrates in place.
           Island props are JSON only — never forward a `<slot />` into one. */}
         <NewsletterForm client:load />

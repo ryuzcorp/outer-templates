@@ -1,31 +1,37 @@
 ---
-// Who runs the site and how to reach them. Replace the copy with the real
-// story; the layout, head tags, and styles stay.
+// Who runs the site and how to reach them. The copy reads as a small
+// studio's real story; rebrand through brand.json, rewrite the words.
 import Base from "../layouts/Base.astro";
 import { pageTitle, siteBrand } from "../lib/brand.ts";
 ---
 
-<Base title={pageTitle("About")} description={`About ${siteBrand.name}.`}>
-  <div class="flex flex-col gap-4">
-    <h1 class="text-3xl font-bold">About</h1>
+<Base title={pageTitle("About")} description={`About ${siteBrand.name} — a small design studio.`}>
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <p class="text-sm font-semibold tracking-widest text-ink uppercase">About</p>
+      <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">
+        A small studio, on purpose.
+      </h1>
+    </div>
     <section class="card bg-base-100 shadow-sm">
-      <div class="card-body gap-2">
+      <div class="card-body gap-3">
         <h2 class="card-title text-xl">{siteBrand.name}</h2>
         <p class="opacity-70">{siteBrand.description}</p>
         <p class="opacity-70">
-          This page is a starting point, not a story — replace it with who is
-          behind the site and why it exists. The header, footer, and head tags
-          read brand.json, so renaming the site never touches this file.
+          Two people, a shared notebook, and a belief that websites should be
+          fast, readable, and easy to keep. We take on a few projects each
+          quarter and write up what we learn along the way.
         </p>
       </div>
     </section>
     <section class="card bg-base-100 shadow-sm">
-      <div class="card-body gap-2">
-        <h2 class="card-title text-xl">Contact</h2>
+      <div class="card-body gap-3">
+        <h2 class="card-title text-xl">Say hello</h2>
         <p class="opacity-70">
           The fastest way to reach us is the newsletter on the{" "}
           <a href="/#newsletter" class="link">home page</a> — leave an email
-          and every new post lands in your inbox.
+          and every new post lands in your inbox. For projects, mention what
+          you're making; every note gets a human reply.
         </p>
       </div>
     </section>

@@ -23,7 +23,7 @@ test("renders the form controls disabled until the client mounts", async () => {
 
 test("each filter has its own empty state", async () => {
   for (const [filter, message] of [
-    ["all", "Add the first item below."],
+    ["all", "A fresh list"],
     ["active", "Nothing left to do."],
     ["done", "Nothing completed yet."],
   ] as const) {
@@ -34,6 +34,35 @@ test("each filter has its own empty state", async () => {
     expect(html).toContain(message);
     expect(html).toContain('aria-current="page"');
   }
+});
+
+test("the empty list offers starter suggestions", async () => {
+  const html = await renderHtml(() => <Home {...empty} />, { markers: false, snapshot: false });
+  expect(html).toContain("Buy milk");
+  expect(html).toContain("Water the plants");
+});
+
+test("the progress pill celebrates only a finished non-empty list", async () => {
+  const none = await renderHtml(() => <Home {...empty} />, { markers: false, snapshot: false });
+  expect(none).not.toContain("All done");
+  expect(none).not.toContain("of 0 done");
+
+  const partial: Props = {
+    items: [{ id: 1, text: "Buy milk", done: false }],
+    filter: "all",
+    counts: { all: 2, active: 1, done: 1 },
+  };
+  const some = await renderHtml(() => <Home {...partial} />, { markers: false, snapshot: false });
+  expect(some).toContain("1 of 2 done");
+  expect(some).not.toContain("All done");
+
+  const finished: Props = {
+    items: [{ id: 1, text: "Buy milk", done: true }],
+    filter: "all",
+    counts: { all: 1, active: 0, done: 1 },
+  };
+  const all = await renderHtml(() => <Home {...finished} />, { markers: false, snapshot: false });
+  expect(all).toContain("All done");
 });
 
 test("blank and overlong text is refused with a message", () => {
@@ -67,7 +96,7 @@ test("done items render checked with a line-through", async () => {
   expect(html).toContain("Buy milk");
   expect(html).toContain("Paid rent");
   expect(html).toContain("line-through");
-  expect(html).toContain("1 left");
+  expect(html).toContain("1 of 2 done");
   expect(html).toContain('aria-label="Mark Paid rent as not done"');
 });
 
