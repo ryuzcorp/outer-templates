@@ -199,6 +199,13 @@
   --color-accent-ink: color-mix(in srgb, var(--color-primary) 55%, white);
 }
 
+/* "System" theme: no `data-theme` attribute, dark comes from the OS. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .accent-scope {
+    --color-accent-ink: color-mix(in srgb, var(--color-primary) 55%, white);
+  }
+}
+
 .text-ink {
   color: var(--color-accent-ink);
 }
