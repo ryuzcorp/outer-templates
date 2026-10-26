@@ -17,7 +17,10 @@ export function resolveTheme(saved: unknown, prefersDark: boolean): Theme {
 // Storage throws when access is blocked (private mode, denied cookies):
 // read degrades to null (fall back to the OS preference), writes degrade
 // to a no-op — the document theme still applies either way.
-export function readStoredTheme(storage: Pick<Storage, "getItem">): Theme | null {
+export function readStoredTheme(storage: Pick<Storage, "getItem"> | null): Theme | null {
+  if (!storage) {
+    return null;
+  }
   try {
     const saved = storage.getItem("theme");
     return saved === "light" || saved === "dark" ? saved : null;
@@ -26,7 +29,10 @@ export function readStoredTheme(storage: Pick<Storage, "getItem">): Theme | null
   }
 }
 
-export function writeStoredTheme(storage: Pick<Storage, "setItem">, theme: Theme): void {
+export function writeStoredTheme(storage: Pick<Storage, "setItem"> | null, theme: Theme): void {
+  if (!storage) {
+    return;
+  }
   try {
     storage.setItem("theme", theme);
   } catch {
