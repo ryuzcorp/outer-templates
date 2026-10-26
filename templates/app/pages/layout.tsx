@@ -170,12 +170,6 @@ export default function Layout({ children }: { children?: View }) {
             <NavLink key={href} href={href} label={label} Icon={Icon} active={path === href} />
           ))}
         </nav>
-        <p class="mt-auto text-sm opacity-70">
-          Built with{" "}
-          <a class="link" href="https://ilha.build">
-            Ilha
-          </a>
-        </p>
       </aside>
       <div class="flex min-w-0 flex-1 flex-col">
         {/* Bottom padding clears the fixed tab bar on phones: its own
@@ -183,16 +177,12 @@ export default function Layout({ children }: { children?: View }) {
         <main class="mx-auto w-full max-w-2xl grow px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom)+var(--outer-badge-space,0px))] sm:pt-8 sm:pb-8">
           <ErrorBoundary fallback={ErrorFallback}>{children}</ErrorBoundary>
         </main>
-        {/* No footer on phones (the tab bar owns the bottom edge, and the
-          credit line lives on the Settings page instead) or on desktop
-          (the sidebar already carries the credit line): tablet only. */}
+        {/* No footer on phones (the tab bar owns the bottom edge) or on
+          desktop (the sidebar frames the page): tablet only. */}
         <footer class="footer footer-center hidden bg-base-200 p-4 text-sm sm:grid lg:hidden">
           {/* daisyUI makes footer children grids; `block` keeps the line inline. */}
           <p class="block">
-            © {new Date().getFullYear()} {appBrand.name} · Built with{" "}
-            <a class="link" href="https://ilha.build">
-              Ilha
-            </a>
+            © {new Date().getFullYear()} {appBrand.name}
           </p>
         </footer>
       </div>

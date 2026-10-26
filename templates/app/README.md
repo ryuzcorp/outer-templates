@@ -40,8 +40,7 @@ footer, and the favicon (regenerated from it at config load — never commit
   middleware rewrite, so dev component sources keep serving).
 - `pages/layout.tsx` — wraps every page: brand header, desktop nav, phone
   bottom tab bar (clears the Free `outer.now` badge via
-  `--outer-badge-space`), footer with a small “Built with Ilha” link to
-  https://ilha.build; remove it if you like.
+  `--outer-badge-space`), tablet footer with the copyright line.
 - `pages/app.css` — Tailwind + daisyUI (`light` by default, `dark` for
   `prefers-color-scheme`); the accent becomes the primary color.
 - `void.config.ts` — the Worker: name, compatibility date, document

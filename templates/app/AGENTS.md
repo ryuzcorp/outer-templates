@@ -27,7 +27,7 @@ In a local checkout, `bun run fmt` formats the code (oxfmt) and
 - `scripts/brand.mjs` — draws `public/favicon.svg` from `brand.json` at
   config load. Never commit the generated SVG or icon PNGs.
 - `pages/layout.tsx` — wraps every page: brand header, desktop nav, phone
-  tab bar, footer with the "Built with Ilha" link (removable).
+  tab bar, tablet footer with the copyright line.
 - `pages/app.css` — Tailwind + daisyUI (`light` default, `dark` for
   `prefers-color-scheme`); the accent becomes the primary color via CSS
   variables on the layout.

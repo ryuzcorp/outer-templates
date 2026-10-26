@@ -143,12 +143,6 @@ export default function Settings() {
           <h2 class="card-title text-xl">About</h2>
           <p class="text-lg font-medium">{appBrand.name}</p>
           <p class="text-sm opacity-70">{appBrand.description}</p>
-          <p class="text-sm opacity-70">
-            Made with{" "}
-            <a class="link" href="https://ilha.build">
-              Ilha
-            </a>
-          </p>
         </div>
       </section>
     </div>
