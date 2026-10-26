@@ -5,6 +5,11 @@
 // `dist/wrangler.json` that Outer deploys with celld.
 import { defineConfig } from "void/config";
 
+// The brand in one place: `brand.json` at the repo root names the app, and
+// this head renders it into every page (title, meta, Open Graph, icons).
+// Edit brand.json to rebrand — never the generated outputs.
+import brand from "./brand.json";
+
 export default defineConfig({
   // Document head for every page. Void's document shell adds none of these
   // itself: `charset` and `viewport` must stay first, or phones render the
@@ -13,22 +18,21 @@ export default defineConfig({
   // theme color, and link previews. Void renders this head on the server:
   // with no index.html the plugin cannot inject these links itself.
   head: {
-    title: "Outer App",
+    title: brand.name,
+    titleTemplate: `%s | ${brand.name}`,
     htmlAttrs: { lang: "en" },
     meta: [
       { charset: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "description", content: "An Outer app: server-rendered Ilha pages on Void." },
-      { name: "theme-color", content: "#ffffff" },
+      { name: "description", content: brand.description },
+      { name: "theme-color", content: brand.accent },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-title", content: "Outer" },
-      { property: "og:title", content: "Outer App" },
-      {
-        property: "og:description",
-        content: "An Outer app: server-rendered Ilha pages on Void.",
-      },
+      { name: "apple-mobile-web-app-title", content: brand.shortName },
+      { property: "og:title", content: brand.name },
+      { property: "og:description", content: brand.description },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: brand.name },
     ],
     link: [
       { rel: "manifest", href: "/manifest.webmanifest" },

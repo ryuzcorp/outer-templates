@@ -1,14 +1,18 @@
 ---
+// The blog index, newest first. Drafts never build: the filter drops them
+// and the `[slug]` route 404s them. Reading time comes from the raw post
+// body (see `src/lib/posts.ts`).
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
-import { postSlug } from "../../lib/posts.ts";
+import { pageTitle } from "../../lib/brand.ts";
+import { postSlug, readingTime } from "../../lib/posts.ts";
 
 const posts = (await getCollection("posts", ({ data }) => !data.draft)).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
 ---
 
-<Base title="Blog" description="Posts, newest first.">
+<Base title={pageTitle("Blog")} description="Posts, newest first.">
   <div class="flex flex-col gap-4">
     <h1 class="text-3xl font-bold">Blog</h1>
     {posts.length ? (
@@ -19,7 +23,7 @@ const posts = (await getCollection("posts", ({ data }) => !data.draft)).sort(
               {post.data.title}
             </a>
             <span class="badge badge-neutral">
-              {post.data.date.toISOString().slice(0, 10)}
+              {post.data.date.toISOString().slice(0, 10)} · {readingTime(post.body ?? "")} min
             </span>
           </li>
         ))}

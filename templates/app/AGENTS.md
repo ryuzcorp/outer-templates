@@ -11,17 +11,29 @@ In a local checkout, `bun run fmt` formats the code (oxfmt) and
 
 ## Files
 
+- `brand.json` — the brand in one place: name, home-screen label,
+  description, accent. Edit it to rename or rebrand; never the generated
+  outputs (see `## Brand`).
 - `pages/index.tsx` → `/`. The file path is the route; `_`-prefixed files
   are components, never routes.
 - `pages/index.server.ts` — loader + action on D1. They run in the Worker.
-- `pages/layout.tsx` — wraps every page. Its footer links
-  https://ilha.build; removable.
+- `pages/settings.tsx` → `/settings` — theme switch, install button, about.
+- `middleware/01.not-found.ts` — the 404 page: rewrites HTML 404s to a
+  branded document. A middleware, not a `[...path]` catch-all, so dev
+  component sources (`/pages/*.tsx`) keep serving.
+- `pages/_brand.ts` — reads `brand.json`; initials and contrast helpers.
+- `pages/_checklist.ts` — the demo's shared rules (filters, validation).
+- `pages/_pwa.ts` — service-worker registration + install-prompt hook.
+- `scripts/brand.mjs` — draws `public/favicon.svg` from `brand.json` at
+  config load. Never commit the generated SVG or icon PNGs.
+- `pages/layout.tsx` — wraps every page: brand header, desktop nav, phone
+  tab bar, footer with the "Built with Ilha" link (removable).
 - `pages/app.css` — Tailwind + daisyUI (`light` default, `dark` for
-  `prefers-color-scheme`).
-- `void.config.ts` — Worker name, document `head`, bindings. Edits need
-  `bun run build` (bindings and `head` are read from the built config).
-- `public/favicon.svg` — the app icon; `head` in `void.config.ts` links the
-  PWA manifest + icons (see `## PWA`).
+  `prefers-color-scheme`); the accent becomes the primary color via CSS
+  variables on the layout.
+- `void.config.ts` — Worker name, document `head` (rendered from
+  `brand.json`), bindings. Edits need `bun run build` (bindings and `head`
+  are read from the built config).
 
 ## Ilha
 
@@ -63,10 +75,13 @@ export default function Counter({ start = 0 }: { start?: number }) {
 
 ## Void
 
-The starter page is the pattern to copy: `pages/index.server.ts` has a
-loader that reads D1 and one action that writes it; `pages/index.tsx`
-renders the list with one `useForm` per form. Replace it with the user's
-app — don't keep the starter list around.
+The checklist demo is the pattern to copy: `pages/index.server.ts` has a
+loader that reads D1 (with a `?filter=` query param) and one action with
+`add` / `toggle` / `edit` / `remove` intents; `pages/index.tsx` renders the
+list with one `useForm` per form, and `pages/_checklist.ts` holds the
+shared rules. Delete the demo in one commit when the app has real pages —
+keep the loader/action/form shape. Filter tabs are plain links, so they
+work without JavaScript.
 
 ```ts
 // pages/index.server.ts
@@ -173,17 +188,35 @@ pass to `idFromName`:
 Without the route the console still lists instances; it just can't show
 their contents.
 
+## Brand
+
+`brand.json` is the one place that names the app: `name`, `shortName`
+(home-screen label), `description`, `accent`. Edit it to rename or
+rebrand — never the generated outputs. The build renders it into the
+document head (`void.config.ts`), the PWA manifest (`vite.config.ts`), the
+header, the footer, and the favicon (`scripts/brand.mjs` draws
+`public/favicon.svg` from it at config load; `pwaAssets` regenerates the
+PNGs every build). After changing it, run `bun run build` so the icons and
+manifest pick it up.
+
+Free apps show an `outer.now` badge: Outer's proxy appends
+`<a id="outer-badge">` to every HTML page and sets
+`--outer-badge-space`. Keep fixed bottom UI (the tab bar, toasts, cookie
+bars) clear of it with `bottom: calc(env(safe-area-inset-bottom) +
+var(--outer-badge-space, 0px))` — Pro pages never set the variable, so it
+falls back to 0. Never hide, cover, or restyle `#outer-badge`.
+
 ## PWA
 
 Every app is installable: `vite-plugin-pwa` (`registerType: autoUpdate`,
 `generateSW`) owns `manifest.webmanifest`, `sw.js`, and all icons, built
-into `dist/client/` from the single source `public/favicon.svg` (`pwaAssets`
-regenerates PNGs every build — never commit icon PNGs or a hand-written
+into `dist/client/` from the brand icon `public/favicon.svg` (generated
+from `brand.json` — never commit the SVG, icon PNGs, or a hand-written
 manifest). The SSR app has no index.html, so `pages/_pwa.ts` registers the
 SW on the client and `void.config.ts` `head` carries the manifest/icon
 links. Never set `navigateFallback` or precache HTML: navigations go to the
-network so reloads always show fresh D1 data. Rename the app via `manifest`
-`name` in `vite.config.ts` + `head` `title`.
+network so reloads always show fresh D1 data. Rename the app in
+`brand.json`, not in `vite.config.ts` or `void.config.ts`.
 
 ## Page text
 

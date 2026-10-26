@@ -1,20 +1,35 @@
 ---
+// The landing page: hero, feature grid, FAQ, and the newsletter signup.
+// Replace the copy with the site's own; the layout, head tags, and styles
+// stay. Island props are JSON only — never forward a `<slot />` into one.
 import Base from "../layouts/Base.astro";
 import NewsletterForm from "../islands/NewsletterForm.tsx";
+import { pageTitle, siteBrand } from "../lib/brand.ts";
+
+const faqs = [
+  {
+    q: "What is this site about?",
+    a: "Whatever the site needs: a landing page, a portfolio, an event page. Replace this answer with the site's own story.",
+  },
+  {
+    q: "How often do you post?",
+    a: "The blog sorts newest first and skips drafts. Delete the sample posts and write real ones — an empty posts folder builds a blog index that says there is nothing here yet.",
+  },
+  {
+    q: "How do I get updates?",
+    a: "Leave an email below. One row per address lands in D1 through a tiny server route; nothing else runs on a server.",
+  },
+];
 ---
 
-<Base
-  title="Outer Site"
-  description="An Outer website: prerendered Astro pages with Ilha islands."
->
+<Base title={pageTitle()} description={siteBrand.description}>
   <div class="flex flex-col gap-8">
     <section class="card bg-base-100 shadow-sm">
-      <div class="card-body gap-4">
-        <h1 class="card-title text-3xl">A site that loads fast</h1>
-        <p class="opacity-70">
-          Mostly static pages, prerendered at build time. Replace this page
-          with the landing page, portfolio, or event page the site needs —
-          the layout, styles, and head tags stay.
+      <div class="card-body gap-4 py-10">
+        <h1 class="card-title text-4xl">{siteBrand.name}</h1>
+        <p class="text-lg opacity-70">
+          {siteBrand.description} Mostly static pages, prerendered at build time — replace
+          this hero with the landing the site needs.
         </p>
         <div class="flex flex-col gap-2 sm:flex-row">
           <a href="/blog" class="btn btn-primary">Read the blog</a>
@@ -40,6 +55,20 @@ import NewsletterForm from "../islands/NewsletterForm.tsx";
         <div class="card-body">
           <h2 class="card-title text-lg">One database</h2>
           <p class="opacity-70">A server route writes signups to D1. Nothing more.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card bg-base-100 shadow-sm">
+      <div class="card-body gap-4">
+        <h2 class="card-title text-2xl">Questions, answered</h2>
+        <div class="flex flex-col gap-2">
+          {faqs.map((faq) => (
+            <details class="collapse collapse-arrow bg-base-200">
+              <summary class="collapse-title font-medium">{faq.q}</summary>
+              <div class="collapse-content opacity-70">{faq.a}</div>
+            </details>
+          ))}
         </div>
       </div>
     </section>

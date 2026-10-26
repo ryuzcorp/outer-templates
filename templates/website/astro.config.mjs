@@ -8,6 +8,13 @@ import ilha from "@ilha/astro";
 import tailwindcss from "@tailwindcss/vite";
 import { voidPlugin } from "void";
 
+import { writeBrandAssets } from "./scripts/brand.mjs";
+
+// The brand in one place: `brand.json` names the site. Regenerate the
+// favicon and OG card from it on every load, so the committed static files
+// are gone and the icons always match the name and accent.
+writeBrandAssets();
+
 /** Top-level keys `celld deploy` accepts. An unknown key stops the deploy,
  * so anything the Cloudflare adapter emits outside this set is dropped,
  * never passed through. Keep this ⊆ Outer's ACCEPTED_CONFIG_KEYS

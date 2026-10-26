@@ -1,12 +1,22 @@
 ---
+// The brand in one place: `brand.json` names the site. Every head tag,
+// the header, the footer, and the favicon render from it — edit it to
+// rebrand, never the generated outputs. Base also sets the accent as the
+// primary color in both themes, and reserves no badge space itself: Outer's
+// proxy appends `#outer-badge` plus `--outer-badge-space` on Free pages,
+// and this layout keeps nothing fixed at the bottom that could cover it.
 import ThemeToggle from "../islands/ThemeToggle.tsx";
+import { initials, onAccent, siteBrand } from "../lib/brand.ts";
 import "../styles/global.css";
+
 interface Props {
   title: string;
-  description: string;
+  description?: string;
+  image?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description = siteBrand.description, image = "/og.svg" } = Astro.props;
+const fg = onAccent(siteBrand.accent);
 ---
 
 <!doctype html>
@@ -17,26 +27,64 @@ const { title, description } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content={siteBrand.accent} />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Outer" />
+    <meta name="apple-mobile-web-app-title" content={siteBrand.shortName} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteBrand.name} />
+    <meta property="og:image" content={image} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title={`${siteBrand.name} blog`} href="/rss.xml" />
+    <!-- Apply the saved theme before first paint so the toggle never
+      flashes the wrong one. The toggle keeps this in sync afterwards. -->
+    <script is:inline>
+      try {
+        var saved = localStorage.getItem("theme");
+        if (saved === "light" || saved === "dark") {
+          document.documentElement.dataset.theme = saved;
+        } else if (matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch (error) {}
+    </script>
     <title>{title}</title>
   </head>
   <body>
-    <div class="flex min-h-dvh flex-col">
+    <div
+      class="flex min-h-dvh flex-col"
+      style={`--color-primary:${siteBrand.accent};--color-primary-content:${fg}`}
+    >
       <header class="navbar bg-base-100 shadow-sm">
-        <div class="mx-auto flex w-full max-w-2xl items-center justify-between px-4">
-          <a href="/" class="btn btn-ghost px-2 text-lg">Outer Site</a>
-          <nav class="flex gap-1">
-            <a href="/" class="btn btn-ghost btn-sm">Home</a>
-            <a href="/blog" class="btn btn-ghost btn-sm">Blog</a>
-            {/* Hydrates in place; static button HTML until it loads. */}
-            <ThemeToggle client:load />
+        <div class="mx-auto flex w-full max-w-2xl flex-col px-4">
+          <div class="flex w-full items-center justify-between gap-2 py-1">
+            <a href="/" class="btn btn-ghost flex items-center gap-2 px-2 text-lg">
+              <span
+                aria-hidden="true"
+                class="flex h-9 w-9 items-center justify-center rounded-lg text-base font-bold"
+                style={`background:${siteBrand.accent};color:${fg}`}
+              >
+                {initials(siteBrand.name)}
+              </span>
+              {siteBrand.name}
+            </a>
+            <div class="flex items-center gap-1">
+              {/* Roomier screens get the links up top; phones get the row below. */}
+              <nav class="hidden items-center gap-1 sm:flex" aria-label="Primary">
+                <a href="/" class="btn btn-ghost">Home</a>
+                <a href="/blog" class="btn btn-ghost">Blog</a>
+                <a href="/about" class="btn btn-ghost">About</a>
+              </nav>
+              {/* Hydrates in place; static button HTML until it loads. */}
+              <ThemeToggle client:load />
+            </div>
+          </div>
+          <nav class="flex gap-1 overflow-x-auto pb-2 sm:hidden" aria-label="Primary">
+            <a href="/" class="btn btn-ghost flex-1">Home</a>
+            <a href="/blog" class="btn btn-ghost flex-1">Blog</a>
+            <a href="/about" class="btn btn-ghost flex-1">About</a>
           </nav>
         </div>
       </header>
@@ -45,7 +93,8 @@ const { title, description } = Astro.props;
       </main>
       <footer class="footer footer-center bg-base-200 p-4 text-sm">
         <p class="block">
-          Built with <a class="link" href="https://ilha.build">Ilha</a>
+          © {new Date().getFullYear()} {siteBrand.name} · Built with{" "}
+          <a class="link" href="https://ilha.build">Ilha</a>
         </p>
       </footer>
     </div>

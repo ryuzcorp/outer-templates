@@ -20,42 +20,59 @@ bun run check      # typecheck + lint + format check + tests
 bun run build      # production build: dist/ + dist/wrangler.json
 ```
 
+## Brand
+
+`brand.json` at the repo root is the one place that names the app. The
+build renders it into the document head, the PWA manifest, the header and
+footer, and the favicon (regenerated from it at config load — never commit
+`public/favicon.svg` or icon PNGs). Edit it to rebrand; run
+`bun run build` so the icons and manifest pick it up.
+
 ## Pages
 
-- `pages/index.tsx` — the `/` page.
+- `pages/index.tsx` — the `/` page: a D1-backed checklist demo (add,
+  complete, edit, delete, filters) to copy, then delete in one commit.
 - `pages/index.server.ts` — loader + action: they run in the Worker, and
   the page reads them as props (`InferProps`) or calls them with `useForm`.
-- `pages/layout.tsx` — wraps every page. The footer carries a small
-  “Built with Ilha” link to https://ilha.build; remove it if you like.
+- `pages/settings.tsx` — theme switch, install button, and the brand values
+  from `brand.json`.
+- `middleware/01.not-found.ts` — the 404 page for unknown URLs (a
+  middleware rewrite, so dev component sources keep serving).
+- `pages/layout.tsx` — wraps every page: brand header, desktop nav, phone
+  bottom tab bar (clears the Free `outer.now` badge via
+  `--outer-badge-space`), footer with a small “Built with Ilha” link to
+  https://ilha.build; remove it if you like.
 - `pages/app.css` — Tailwind + daisyUI (`light` by default, `dark` for
-  `prefers-color-scheme`).
+  `prefers-color-scheme`); the accent becomes the primary color.
 - `void.config.ts` — the Worker: name, compatibility date, document
-  `head` (PWA manifest/icon links, theme color, Open Graph tags), bindings.
+  `head` (rendered from `brand.json`: title, meta, Open Graph tags, PWA
+  icon links, theme color), bindings.
 
 ## PWA
 
 Every app is installable on phones by default. `vite-plugin-pwa`
 (`registerType: 'autoUpdate'`, `generateSW`) owns the manifest, the service
 worker, and all icons: they build into `dist/client/` (`/manifest.webmanifest`,
-`/sw.js`) from the single source `public/favicon.svg` — edit the SVG and the
-build regenerates matching PNGs, no committed icon files. The service worker
+`/sw.js`) from the brand icon, which the build regenerates from
+`brand.json` — no committed icon files. The service worker
 precaches only hashed client assets + icons; navigations always go to the
-network, so reloads show fresh D1 data. Rename the app via `manifest` `name`
-in `vite.config.ts` and `head` `title` in `void.config.ts`.
+network, so reloads show fresh D1 data. Rename the app in `brand.json`.
 
 ## Bindings
 
 `void.config.ts` declares the Worker in its `cloudflare` section. The
-template ships one D1 database, used by the starter page; run
+template ships one D1 database, used by the checklist demo; run
 `bun run build` after editing bindings (they are read from the built config):
 
 ```ts
 d1_databases: [{ binding: "DB", database_name: "app-db" }],
 ```
 
-The platform provisions the database per app on first deploy. Outer’s
-deploy does NOT run migration files: create tables in code with
-`CREATE TABLE IF NOT EXISTS` (see `pages/index.server.ts`). Read the binding in a server module
+The platform provisions the database per app on first deploy. Outer applies
+the committed `db/migrations/` files on deploy before the new code goes
+live — never edit an applied migration, add a new one. A `CREATE TABLE IF
+NOT EXISTS` backstop in `pages/index.server.ts` covers local previews,
+which run no migrations. Read the binding in a server module
 with `env` from `cloudflare:workers`.
 
 Secrets: set them as env vars on the app (Outer passes them to the build
