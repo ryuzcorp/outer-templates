@@ -1,0 +1,38 @@
+{
+  "name": "outer-website",
+  "private": true,
+  "license": "MIT-0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "typecheck": "astro build && tsc --noEmit",
+    "lint": "oxlint",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "test": "bun test",
+    "check": "bun run typecheck && bun run lint && bun run fmt:check && bun run test"
+  },
+  "dependencies": {
+    "daisyui": "^5.7.50",
+    "effect": "^4",
+    "ilha": "^0.16.0"
+  },
+  "devDependencies": {
+    "@astrojs/cloudflare": "^14.4.2",
+    "@cloudflare/workers-types": "^5",
+    "@ilha/astro": "^0.4.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/bun": "^1.4.2",
+    "astro": "^7.4.2",
+    "oxfmt": "^0.74.0",
+    "oxlint": "^1.86.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7",
+    "void": "^1.2.1"
+  },
+  "trustedDependencies": [
+    "esbuild",
+    "workerd"
+  ]
+}
