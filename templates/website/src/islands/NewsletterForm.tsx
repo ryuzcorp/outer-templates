@@ -1,4 +1,4 @@
-import { atom } from "ilha";
+import { atom, watch } from "ilha";
 
 import { newsletterError, postSubscription } from "../lib/newsletter.ts";
 // A newsletter signup island: static HTML on first paint, hydrated in the
@@ -11,6 +11,15 @@ export default function NewsletterForm() {
   const error = atom<string | null>(null);
   const done = atom(false);
   const pending = atom(false);
+  // Static HTML ships before the island hydrates. Until then the button is
+  // disabled, so a submit can't fall back to a GET that puts the address in
+  // the URL (history, logs, referrers).
+  const mounted = atom(false);
+  watch.once(() => {
+    if (typeof window !== "undefined") {
+      mounted.set(true);
+    }
+  });
 
   async function submit(event: Event) {
     event.preventDefault();
@@ -54,7 +63,7 @@ export default function NewsletterForm() {
         oninput={(event) => email.set(event.currentTarget.value)}
         class="input join-item grow"
       />
-      <button type="submit" disabled={pending()} class="btn btn-primary join-item">
+      <button type="submit" disabled={!mounted() || pending()} class="btn btn-primary join-item">
         Subscribe
       </button>
       {error() ? <p class="text-error join-item w-full">{error()}</p> : null}

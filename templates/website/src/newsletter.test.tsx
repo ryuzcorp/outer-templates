@@ -86,6 +86,12 @@ test("blocked storage degrades instead of throwing", () => {
   writeStoredTheme(denied, "dark");
 });
 
+test("no storage at all (window.localStorage threw) falls back cleanly", () => {
+  expect(readStoredTheme(null)).toBeNull();
+  writeStoredTheme(null, "dark");
+  expect(resolveTheme(readStoredTheme(null), true)).toBe("dark");
+});
+
 test("post paths derive from the collection entry id", () => {
   expect(postSlug("hello.md")).toBe("hello");
   expect(postSlug("second.md")).toBe("second");
