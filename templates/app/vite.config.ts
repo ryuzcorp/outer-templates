@@ -1,4 +1,4 @@
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { voidIlha } from "@ilha/void/plugin";
@@ -22,6 +22,8 @@ const brand = JSON.parse(readFileSync(brandUrl, "utf-8")) as {
   description: string;
   accent: string;
 };
+// `public/` holds only generated files, so a fresh clone has no such folder.
+mkdirSync(new URL("./public/", import.meta.url), { recursive: true });
 writeFileSync(new URL("./public/favicon.svg", import.meta.url), faviconSvg(brand));
 
 /** The app root: this config file's own directory. */
