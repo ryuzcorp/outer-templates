@@ -28,7 +28,13 @@
   }
 }
 
-.progress::-webkit-progress-value,
+/* Split, not combined: an unknown pseudo-element (`::-moz-progress-bar`
+ * in Chrome, `::-webkit-progress-value` in Firefox) invalidates the whole
+ * selector list, silently dropping the rule. */
+.progress::-webkit-progress-value {
+  transition: width 240ms ease;
+}
+
 .progress::-moz-progress-bar {
   transition: width 240ms ease;
 }

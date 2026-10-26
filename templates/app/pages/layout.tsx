@@ -183,9 +183,10 @@ export default function Layout({ children }: { children?: View }) {
         <main class="mx-auto w-full max-w-2xl grow px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom)+var(--outer-badge-space,0px))] sm:pt-8 sm:pb-8">
           <ErrorBoundary fallback={ErrorFallback}>{children}</ErrorBoundary>
         </main>
-        {/* No footer on phones: the tab bar owns the bottom edge, and the
-          credit line lives on the Settings page instead. */}
-        <footer class="footer footer-center hidden bg-base-200 p-4 text-sm sm:grid">
+        {/* No footer on phones (the tab bar owns the bottom edge, and the
+          credit line lives on the Settings page instead) or on desktop
+          (the sidebar already carries the credit line): tablet only. */}
+        <footer class="footer footer-center hidden bg-base-200 p-4 text-sm sm:grid lg:hidden">
           {/* daisyUI makes footer children grids; `block` keeps the line inline. */}
           <p class="block">
             © {new Date().getFullYear()} {appBrand.name} · Built with{" "}

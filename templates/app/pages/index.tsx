@@ -1,5 +1,5 @@
 import { Form, Link, useForm } from "@ilha/void";
-import { atom, watch } from "ilha";
+import { atom, batch, watch } from "ilha";
 
 import { FILTERS, MAX_TEXT } from "./_checklist.ts";
 import type { Filter, Task } from "./_checklist.ts";
@@ -154,9 +154,43 @@ function ItemRow({ item }: { item: Task }) {
     </li>
   );
 }
+// The progress fill: ilha's morph leaves `value` to live state on anything
+// but a real input (only `morphInput` resyncs it), so an in-place update
+// would keep the value it mounted with and never paint the fill. A keyed
+// component remounts on every count change instead, painting fresh markup
+// with the right value each time.
+function Progress({ done, total }: { done: number; total: number }) {
+  return (
+    <progress
+      class="progress progress-primary w-full"
+      value={done}
+      max={total}
+      aria-label={`${done} of ${total} done`}
+    />
+  );
+}
 
 export default function Home({ items, filter, counts }: Props) {
   const add = useForm("/" as string, { intent: "add", text: "" });
+  // A successful add leaves the typed text in the box (form state survives
+  // the prop refresh), so clear it once per success. Validation failures
+  // never set `wasSuccessful`, so the text stays for fixing. This is
+  // `setData`, not `reset`: success snapshots the data as the new baseline,
+  // so `reset` would restore the just-submitted text. `cleared` makes the
+  // clear one-shot: `wasSuccessful` stays set until the next submit, and a
+  // render in between must not wipe text typed for that submit. Without JS
+  // the server redirect already returns an empty input, so this only runs
+  // hydrated.
+  const cleared = atom(false);
+  if (add.pending && cleared()) {
+    cleared.set(false);
+  }
+  if (add.wasSuccessful && !cleared() && add.data.text !== "") {
+    batch(() => {
+      cleared.set(true);
+      add.setData("text", "");
+    });
+  }
   // The forms are server-rendered, but their handlers exist only after the
   // client hydrates: a click before that would be lost. Controls stay
   // disabled until then.
@@ -193,15 +227,9 @@ export default function Home({ items, filter, counts }: Props) {
             ) : null}
           </div>
           {/* Progress in the brand accent. Hidden until the first item —
-            an empty list has nothing to measure. */}
-          {total ? (
-            <progress
-              class="progress progress-primary w-full"
-              value={done}
-              max={total}
-              aria-label={`${done} of ${total} done`}
-            />
-          ) : null}
+            an empty list has nothing to measure. Keyed by count (see
+            `Progress`): each change remounts with a fresh `value`. */}
+          {total ? <Progress key={`${done}/${total}`} done={done} total={total} /> : null}
           {/* Filter tabs are plain links with a query param, so filtering
             works without JavaScript: the loader reads `?filter=` and the
             server renders the matching rows. */}

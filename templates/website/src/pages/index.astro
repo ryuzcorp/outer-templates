@@ -48,9 +48,12 @@ const faqs = [
   <div class="flex flex-col gap-10 sm:gap-14">
     {/* Hero: large type over an accent wash, one primary CTA, one quiet link. */}
     <section class="relative overflow-hidden rounded-3xl bg-base-100 shadow-sm">
+      {/* Full-bleed wash, painted by CSS as a radial fade anchored at the
+        top right. It never touches the section edges, so there is no box
+        edge to clip — see `.hero-glow`. */}
       <div
         aria-hidden="true"
-        class="hero-glow absolute -top-24 -right-24 h-72 w-72 rounded-full sm:h-96 sm:w-96"
+        class="hero-glow pointer-events-none absolute inset-0"
       >
       </div>
       <div class="relative flex flex-col gap-5 px-6 py-12 sm:px-12 sm:py-20">

@@ -61,10 +61,12 @@
 
 /* The hero's accent wash: a soft radial glow behind the headline, strong
  * enough to give the page presence, faint enough to keep text contrast in
- * both themes. */
+ * both themes. The gradient is anchored at the top right of the whole hero
+ * and fades to transparent well inside the box, so `overflow-hidden`
+ * never clips a visible edge. */
 .hero-glow {
   background: radial-gradient(
-    circle,
+    55% 65% at 80% 18%,
     color-mix(in srgb, var(--color-primary) 28%, transparent),
     transparent 70%
   );
