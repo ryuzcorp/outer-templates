@@ -1,4 +1,4 @@
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { voidIlha } from "@ilha/void/plugin";
@@ -7,6 +7,24 @@ import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
 import { voidPlugin } from "void";
+
+import { faviconSvg } from "./scripts/brand.mjs";
+
+/** The brand in one place: `brand.json` names the app. The build renders it
+ * into the PWA manifest and regenerates `public/favicon.svg` from it, so
+ * the icon always matches the name and accent. `new URL(..., import.meta.url)`
+ * keeps working after Vite bundles this config to a temp file; `dirname`
+ * would point at the temp dir instead of the app root. */
+const brandUrl = new URL("./brand.json", import.meta.url);
+const brand = JSON.parse(readFileSync(brandUrl, "utf-8")) as {
+  name: string;
+  shortName: string;
+  description: string;
+  accent: string;
+};
+// `public/` holds only generated files, so a fresh clone has no such folder.
+mkdirSync(new URL("./public/", import.meta.url), { recursive: true });
+writeFileSync(new URL("./public/favicon.svg", import.meta.url), faviconSvg(brand));
 
 /** The app root: this config file's own directory. */
 const APP_ROOT = import.meta.dirname;
@@ -149,14 +167,14 @@ export default defineConfig({
       // dist/client/manifest.webmanifest from this. Icons are injected by
       // pwaAssets (the plugin fills them in when the manifest omits them).
       manifest: {
-        name: "Outer App",
-        short_name: "Outer",
-        description: "An Outer app: server-rendered Ilha pages on Void.",
+        name: brand.name,
+        short_name: brand.shortName,
+        description: brand.description,
         start_url: "/",
         scope: "/",
         display: "standalone",
-        theme_color: "#ffffff",
-        background_color: "#ffffff",
+        theme_color: brand.accent,
+        background_color: brand.accent,
       },
       // /assets-generator/integrations: build-time icons from the single
       // source public/favicon.svg (minimal-2023 preset by default).

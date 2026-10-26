@@ -34,3 +34,6 @@ logs
 
 # void local state
 .void-wrangler.jsonc
+
+# generated from brand.json at build/config load (scripts/brand.mjs)
+public/favicon.svg

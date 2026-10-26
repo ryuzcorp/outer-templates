@@ -21,15 +21,23 @@ In a local checkout, `bun run fmt` formats the code (oxfmt) and
 If the site grows accounts or live collaboration, say so: it wants the app
 template, not more islands.
 
-## Files
-
+- `brand.json` — the brand in one place: name, home-screen label,
+  description, accent. Edit it to rename or rebrand; never the generated
+  outputs (see `## Brand`).
 - `src/pages/` → routes. `index.astro` → `/`, `blog/index.astro` →
   `/blog`, `blog/[slug].astro` → `/blog/<slug>`, `api/newsletter.ts` →
-  `/api/newsletter`. Files, not config, are the router — a new page is a
-  new file.
+  `/api/newsletter`, `rss.xml.ts` → `/rss.xml`, `sitemap.xml.ts` →
+  `/sitemap.xml`, `about.astro` → `/about`, `404.astro` → unknown URLs.
+  Files, not config, are the router — a new page is a new file.
 - `src/content/posts/*.md` + `src/content.config.ts` — the blog. Each file
   needs `title`, `description`, `date`; `draft: true` stays out of the
   build. Delete the samples when the site has real posts.
+- `src/lib/brand.ts` — reads `brand.json`; page titles, initials and
+  contrast helpers. `src/lib/posts.ts` — slugs and reading time.
+  `src/lib/site.ts` — the public origin for absolute feed/sitemap links
+  (`SITE_URL`, else `https://outer.now`).
+- `scripts/brand.mjs` — draws `public/favicon.svg` and `public/og.svg`
+  from `brand.json` at config load. Never commit the generated files.
 - `src/islands/*.tsx` — interactive Ilha components, hydrated where the
   page says (`client:load`, `client:idle`, `client:visible`).
 - `src/layouts/Base.astro` — wraps every page: head tags, header, footer.
@@ -44,7 +52,8 @@ template, not more islands.
 - `void.config.ts` — Worker name, D1 binding, `nodejs_als`.
   `d1_databases` is the site's one database; Outer provisions it on first
   deploy.
-- `public/favicon.svg` — the site icon.
+- `public/favicon.svg` + `public/og.svg` — generated from `brand.json` at
+  config load (see `scripts/brand.mjs`); never commit them.
 - `db/migrations/` — D1 schema. `void db generate` writes `NNNN_name.sql`
   here; never edit an applied migration.
 
@@ -76,7 +85,10 @@ import NewsletterForm from "../islands/NewsletterForm.tsx";
 
 Posts are Markdown with frontmatter; the collection schema is the contract
 (`src/content.config.ts`). The blog index sorts newest first and skips
-drafts; the `[slug]` route prerenders one page per post at build time.
+drafts; the `[slug]` route prerenders one page per post at build time, with
+reading time from the raw body (`src/lib/posts.ts`). The feed
+(`rss.xml.ts`) and sitemap (`sitemap.xml.ts`) prerender too — both need
+absolute links, so set `SITE_URL` when the site has its own domain.
 Images go in `public/` and are referenced by absolute path (`/photo.jpg`).
 
 ## Prerender vs server routes
@@ -167,6 +179,25 @@ migration files in `db/migrations/` (`void db generate` writes
 `prepare()` takes one statement; `bind(...)` fills `?`; `all()` returns
 `{ results }`, `first()` one row, `run()` writes. Verify against
 https://void.cloud/guide/database and https://celld.dev/docs/services/d1/.
+
+## Brand
+
+`brand.json` is the one place that names the site: `name`, `shortName`
+(home-screen label), `description`, `accent`. Edit it to rename or
+rebrand — never the generated outputs. The build renders it into the head
+tags (`src/layouts/Base.astro`: title, meta, Open Graph, `og:image`),
+the header, the footer, and the favicon + OG card (`scripts/brand.mjs`
+draws them at config load). After changing it, run `bun run build` so the
+icons and the card pick it up; the demo landing copy still needs a manual
+rewrite.
+
+Free sites show an `outer.now` badge: Outer's proxy appends
+`<a id="outer-badge">` to every HTML page and sets
+`--outer-badge-space`. This layout keeps nothing fixed at the bottom, so
+there is nothing to clear — if you add fixed bottom UI (cookie bars,
+toasts), offset it with `bottom: calc(env(safe-area-inset-bottom) +
+var(--outer-badge-space, 0px))`, which falls back to 0 on Pro pages. Never
+hide, cover, or restyle `#outer-badge`.
 
 ## Deploy
 

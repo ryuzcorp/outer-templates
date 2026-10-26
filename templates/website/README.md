@@ -25,18 +25,31 @@ bun run check      # typecheck + lint + format check + tests
 bun run build      # prerender + bundle: dist/ + dist/wrangler.json
 ```
 
+## Brand
+
+`brand.json` at the repo root is the one place that names the site. The
+build renders it into every head tag, the header and footer, and the
+favicon + link-preview card (regenerated from it at config load — never
+commit `public/favicon.svg` or `public/og.svg`). Edit it to rebrand, then
+rewrite the demo landing copy; run `bun run build` so the icons pick it up.
+
 ## Pages
 
-- `src/pages/index.astro` — the `/` page.
-- `src/pages/blog/` — the Markdown blog (`index.astro` + `[slug].astro`).
+- `src/pages/index.astro` — the `/` page: hero, feature grid, FAQ, and the
+  newsletter signup. Replace the copy with the site's own.
+- `src/pages/blog/` — the Markdown blog (`index.astro` + `[slug].astro`)
+  with reading time; `rss.xml.ts` and `sitemap.xml.ts` prerender the feed
+  and sitemap (set `SITE_URL` when the site has its own domain).
+- `src/pages/about.astro` — about + contact. `src/pages/404.astro` —
+  unknown URLs.
 - `src/pages/api/newsletter.ts` — a server route (`prerender = false`)
   that writes signups to D1. Replace it with the site's forms — don't keep
   the starter around.
 - `src/islands/` — interactive Ilha components, hydrated with `client:*`.
-- `src/layouts/Base.astro` — wraps every page: head tags (charset and
-  viewport first), header, footer.
+- `src/layouts/Base.astro` — wraps every page: brand head tags (charset
+  and viewport first), header with the brand mark, footer.
 - `src/styles/global.css` — Tailwind + daisyUI (`light` by default, `dark`
-  for `prefers-color-scheme`).
+  for `prefers-color-scheme`); the accent becomes the primary color.
 
 ## Content
 

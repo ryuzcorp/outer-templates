@@ -40,3 +40,7 @@ logs
 
 # void build output
 void.lock.json
+
+# generated from brand.json at build/config load (scripts/brand.mjs)
+public/favicon.svg
+public/og.svg

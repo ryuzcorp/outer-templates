@@ -1,33 +1,56 @@
 ---
+// The blog index, newest first. Drafts never build: the filter drops them
+// and the `[slug]` route 404s them. Reading time comes from the raw post
+// body (see `src/lib/posts.ts`).
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";
-import { postSlug } from "../../lib/posts.ts";
+import { pageTitle } from "../../lib/brand.ts";
+import { postSlug, readingTime } from "../../lib/posts.ts";
 
 const posts = (await getCollection("posts", ({ data }) => !data.draft)).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
+
+function formatDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
 ---
 
-<Base title="Blog" description="Posts, newest first.">
-  <div class="flex flex-col gap-4">
-    <h1 class="text-3xl font-bold">Blog</h1>
-    {posts.length ? (
-      <ul class="list rounded-box bg-base-200">
-        {posts.map((post) => (
-          <li class="list-row items-center">
-            <a href={`/blog/${postSlug(post.id)}`} class="list-col-grow link">
-              {post.data.title}
-            </a>
-            <span class="badge badge-neutral">
-              {post.data.date.toISOString().slice(0, 10)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <div role="status" class="alert alert-soft">
-        Nothing here yet. Add a Markdown file under src/content/posts/.
-      </div>
-    )}
+<Base title={pageTitle("Blog")} description="Essays and notes from the studio, newest first.">
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-2">
+      <p class="text-sm font-semibold tracking-widest text-ink uppercase">Journal</p>
+      <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">Notes from the studio</h1>
+      <p class="max-w-lg opacity-70">
+        Essays and short notes on design, the web, and working small.
+      </p>
+    </div>
+    {
+      posts.length ? (
+        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {posts.map((post) => (
+            <li>
+              <a
+                href={`/blog/${postSlug(post.id)}`}
+                class="card blog-card h-full bg-base-100 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div class="card-body gap-3">
+                  <p class="text-xs font-medium tracking-wide opacity-60 uppercase">
+                    {formatDate(post.data.date)} · {readingTime(post.body ?? "")} min read
+                  </p>
+                  <h2 class="card-title text-xl leading-snug">{post.data.title}</h2>
+                  <p class="line-clamp-3 text-sm opacity-70">{post.data.description}</p>
+                  <span class="link mt-auto w-fit text-sm font-medium text-ink">Read →</span>
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div role="status" class="alert alert-soft">
+          No posts yet — check back soon.
+        </div>
+      )
+    }
   </div>
 </Base>
