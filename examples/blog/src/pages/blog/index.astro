@@ -1,6 +1,6 @@
 ---
 // The blog index, newest first. Drafts never build: the filter drops them
-// and the `[slug]` route 404s them. Reading time comes from the raw post
+// and the `[...slug]` route 404s them. Reading time comes from the raw post
 // body (see `src/lib/posts.ts`).
 import { getCollection } from "astro:content";
 import Base from "../../layouts/Base.astro";

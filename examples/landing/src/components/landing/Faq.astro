@@ -1,0 +1,32 @@
+---
+const faqs = [
+  {
+    q: "Do you take on new projects?",
+    a: "A few each quarter. Write through the contact section below and mention what you're making — every note gets a human reply.",
+  },
+  {
+    q: "How does a project usually run?",
+    a: "A short call, a one-page plan with a fixed price, then weekly builds you can click. You see progress from the first week.",
+  },
+  {
+    q: "How do I follow along?",
+    a: "Check back here for new posts — or add an email signup with the newsletter example and they will land in your inbox, about once a month.",
+  },
+];
+---
+
+<section class="card bg-base-100 shadow-sm">
+  <div class="card-body gap-4">
+    <h2 class="card-title text-2xl tracking-tight">Questions, answered</h2>
+    <div class="flex flex-col gap-2">
+      {
+        faqs.map((faq) => (
+          <details class="collapse collapse-arrow bg-base-200">
+            <summary class="collapse-title font-medium">{faq.q}</summary>
+            <div class="collapse-content opacity-70">{faq.a}</div>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

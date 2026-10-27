@@ -1,7 +1,6 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
-
-import { isUniqueViolation, newsletterRequest } from "../../lib/newsletter.ts";
+import { isSameOriginRequest, isUniqueViolation, newsletterRequest } from "../../lib/newsletter.ts";
 
 // A server route: it opts out of prerendering, so it runs in the Worker and
 // reads bindings from `cloudflare:workers`. The homepage island POSTs here;
@@ -21,6 +20,11 @@ async function database(env: { DB: D1Database }) {
 
 export const POST: APIRoute = async ({ request }) => {
   const { DB } = env;
+  // Browsers send Origin on fetch POSTs; a cross-site form has no usable
+  // same-origin signal, so it lands here and gets a 403.
+  if (!isSameOriginRequest(request)) {
+    return Response.json({ message: "Couldn't save that email. Try again." }, { status: 403 });
+  }
   const body: unknown = await request.json().catch(() => null);
   const parsed = newsletterRequest(body);
   if ("message" in parsed) {

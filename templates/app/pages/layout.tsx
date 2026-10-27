@@ -1,7 +1,9 @@
 import { Link, useRouter } from "@ilha/void";
-import { ErrorBoundary } from "ilha";
+import { ErrorBoundary, h } from "ilha";
 import type { View } from "ilha";
+import type { IconNode } from "lucide";
 
+import { NAV } from "./_nav.ts";
 import { appBrand, initials, onAccent } from "./_brand.ts";
 import "./app.css";
 // /guide/auto-update (SSR/SSG): no index.html entry point, so register the
@@ -25,46 +27,26 @@ export function BrandMark() {
   );
 }
 
-function ChecklistIcon({ class: cls }: { class?: string }) {
+// Renders a Lucide icon node (plain data from `pages/_nav.ts`): the shared
+// 24px outline style — no fill, currentColor stroke, weight 2, round caps
+// and joins. Children pass straight through `h`, so every tag Lucide uses
+// (`path`, `circle`, `rect`, …) renders with its own attributes.
+function LucideIcon({ icon, class: cls }: { icon: IconNode; class?: string }) {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="1.8"
+      stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
       class={cls ?? "h-5 w-5"}
     >
-      <path d="M9 11.5 11 13.5 15 9.5" />
-      <path d="M12 21.5c-1.5 0-2.8-.3-4-1L4 21.5l1-4c-.7-1.2-1-2.5-1-4 0-5 4-9.5 8-9.5s8 4.5 8 9.5-4 12-8 12Z" />
+      {icon.map(([tag, attrs], i) => h(tag, { ...attrs, key: i }))}
     </svg>
   );
 }
-
-function SettingsIcon({ class: cls }: { class?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      class={cls ?? "h-5 w-5"}
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.04-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09A1.7 1.7 0 0 0 10.14 3V3a2 2 0 1 1 4 0v.09c0 .68.4 1.3 1.04 1.56.6.25 1.3.1 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09c.25.6.88 1.04 1.56 1.04H21a2 2 0 1 1 0 4h-.09c-.68 0-1.3.4-1.51 1.04Z" />
-    </svg>
-  );
-}
-
-const NAV = [
-  { href: "/", label: "Checklist", Icon: ChecklistIcon },
-  { href: "/settings", label: "Settings", Icon: SettingsIcon },
-];
 
 // One nav link with a clear active state: accent-ink text plus a small
 // indicator. `vertical` renders the phone tab-bar item (icon over label);
@@ -72,13 +54,13 @@ const NAV = [
 function NavLink({
   href,
   label,
-  Icon,
+  icon,
   active,
   vertical,
 }: {
   href: string;
   label: string;
-  Icon: (props: { class?: string }) => View;
+  icon: IconNode;
   active: boolean;
   vertical?: boolean;
 }) {
@@ -100,7 +82,7 @@ function NavLink({
   return (
     <Link href={href} aria-current={active ? "page" : undefined} class={`${base} ${tone} nav-link`}>
       {vertical ? null : indicator}
-      <Icon />
+      <LucideIcon icon={icon} />
       {label}
       {vertical ? indicator : null}
     </Link>
@@ -153,8 +135,8 @@ export default function Layout({ children }: { children?: View }) {
           {/* Tablet widths have room for the links up top; phones get the
             bottom tab bar instead. */}
           <nav aria-label="Primary" class="hidden gap-1 sm:flex">
-            {NAV.map(({ href, label, Icon }) => (
-              <NavLink key={href} href={href} label={label} Icon={Icon} active={path === href} />
+            {NAV.map(({ href, label, icon }) => (
+              <NavLink key={href} href={href} label={label} icon={icon} active={path === href} />
             ))}
           </nav>
         </div>
@@ -166,8 +148,8 @@ export default function Layout({ children }: { children?: View }) {
           {appBrand.name}
         </Link>
         <nav aria-label="Primary" class="flex flex-col gap-1">
-          {NAV.map(({ href, label, Icon }) => (
-            <NavLink key={href} href={href} label={label} Icon={Icon} active={path === href} />
+          {NAV.map(({ href, label, icon }) => (
+            <NavLink key={href} href={href} label={label} icon={icon} active={path === href} />
           ))}
         </nav>
       </aside>
@@ -197,15 +179,15 @@ export default function Layout({ children }: { children?: View }) {
         class="fixed inset-x-0 bottom-0 z-40 border-t border-base-300 bg-base-100/95 backdrop-blur sm:hidden"
       >
         <div
-          class="mx-auto grid max-w-2xl grid-cols-2 gap-1 px-3 pt-1"
-          style="padding-bottom:calc(env(safe-area-inset-bottom) + var(--outer-badge-space, 0px))"
+          class="mx-auto grid max-w-2xl gap-1 px-3 pt-1"
+          style={`grid-template-columns:repeat(${NAV.length},minmax(0,1fr));padding-bottom:calc(env(safe-area-inset-bottom) + var(--outer-badge-space, 0px))`}
         >
-          {NAV.map(({ href, label, Icon }) => (
+          {NAV.map(({ href, label, icon }) => (
             <NavLink
               key={href}
               href={href}
               label={label}
-              Icon={Icon}
+              icon={icon}
               active={path === href}
               vertical
             />

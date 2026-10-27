@@ -1,0 +1,38 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # The examples job executes example code from the PR; give it no more
+    # than read access, and keep credentials out of the checkout.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          # Astro needs >=22.23.4; the runner default (22.23.3) fails
+          # `astro build` with "Node.js ... is not supported by Astro!".
+          node-version: 24.x
+      - uses: oven-sh/setup-bun@v2
+      - name: app template
+        run: |
+          cd templates/app
+          bun install
+          bun run check
+      - name: website template
+        run: |
+          cd templates/website
+          bun install
+          bun run check
+      - name: examples
+        run: |
+          bun install
+          bun run check-examples

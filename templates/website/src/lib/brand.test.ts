@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 
 import { initials as scriptInitials, onAccent as scriptOnAccent } from "../../scripts/brand.mjs";
 import { initials, onAccent, pageTitle, siteBrand } from "./brand.ts";
-import { readingTime, WORDS_PER_MINUTE } from "./posts.ts";
 import { siteUrl } from "./site.ts";
 
 test("page titles append the brand", () => {
@@ -30,20 +29,6 @@ test("the runtime brand helpers match the icon script", () => {
   for (const accent of ["#4338ca", "#d9482b", "#ffffff", "#000000", "#f5c518"]) {
     expect(onAccent(accent)).toBe(scriptOnAccent(accent));
   }
-});
-
-test("short posts still read as one minute", () => {
-  expect(readingTime("Hello, website.")).toBe(1);
-  expect(readingTime("")).toBe(1);
-});
-
-test("reading time scales with prose, not code", () => {
-  const prose = Array(WORDS_PER_MINUTE + 1)
-    .fill("word")
-    .join(" ");
-  expect(readingTime(prose)).toBe(2);
-  const code = `\`\`\`\n${prose}\n\`\`\`\nDone.`;
-  expect(readingTime(code)).toBe(1);
 });
 
 test("feed links default to Outer until SITE_URL is set", () => {

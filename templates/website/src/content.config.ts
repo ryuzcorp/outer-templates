@@ -1,8 +1,8 @@
 import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 
-// One Markdown file per post in `src/content/posts/`. Drafts never build:
-// the blog index filters them out and the slug route returns 404.
+// One Markdown file per post in `src/content/posts/` (the `blog` example
+// adds the first ones). Drafts never build.
 const posts = defineCollection({
   loader: glob({ pattern: "**/*.md", base: "./src/content/posts" }),
   schema: z.object({

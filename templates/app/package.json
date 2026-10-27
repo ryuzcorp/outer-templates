@@ -17,7 +17,8 @@
   "dependencies": {
     "daisyui": "^5.7.50",
     "effect": "^4",
-    "ilha": "^0.16.0"
+    "ilha": "^0.16.0",
+    "lucide": "^1.62.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5",

@@ -1,0 +1,42 @@
+---
+import { siteBrand } from "../../lib/brand.ts";
+---
+
+<section class="relative overflow-hidden rounded-3xl bg-base-100 shadow-sm">
+  {/* Full-bleed wash, painted by CSS as a radial fade anchored at the
+    top right. It never touches the section edges, so there is no box
+    edge to clip — see the `<style>` block below. */}
+  <div
+    aria-hidden="true"
+    class="hero-glow pointer-events-none absolute inset-0"
+  >
+  </div>
+  <div class="relative flex flex-col gap-5 px-6 py-12 sm:px-12 sm:py-20">
+    <p class="text-sm font-semibold tracking-widest text-ink uppercase">
+      {siteBrand.name} — notes &amp; projects
+    </p>
+    <h1 class="max-w-xl text-4xl leading-[1.05] font-extrabold tracking-tight sm:text-6xl">
+      Calm work for a loud internet.
+    </h1>
+    <p class="max-w-lg text-lg opacity-70">{siteBrand.description}</p>
+    <div class="flex flex-col gap-2 pt-1 sm:flex-row sm:items-center">
+      <a href="/blog" class="btn btn-primary btn-lg">Read the journal</a>
+      <a href="/about" class="btn btn-ghost btn-lg">About →</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The hero's accent wash: a soft radial glow behind the headline, strong
+   * enough to give the page presence, faint enough to keep text contrast in
+   * both themes. The gradient is anchored at the top right of the whole hero
+   * and fades to transparent well inside the box, so `overflow-hidden`
+   * never clips a visible edge. */
+  .hero-glow {
+    background: radial-gradient(
+      55% 65% at 80% 18%,
+      color-mix(in srgb, var(--color-primary) 28%, transparent),
+      transparent 70%
+    );
+  }
+</style>

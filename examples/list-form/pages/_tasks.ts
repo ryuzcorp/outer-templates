@@ -1,4 +1,4 @@
-// The checklist demo's shared rules: one place for the task shape, the
+// The list example's shared rules: one place for the task shape, the
 // filter tabs, and text validation. The server module and `bun test` both
 // import this; it touches no bindings, so it stays trivially testable.
 export interface Task {
@@ -19,7 +19,7 @@ export const MAX_TEXT = 200;
 
 // Server-side text rule, mirrored by `maxlength` on the inputs. Returns the
 // inline error message, or null when the text is fine.
-export function checklistError(text: string): string | null {
+export function taskError(text: string): string | null {
   const value = text.trim();
   if (!value) {
     return "Write something first.";

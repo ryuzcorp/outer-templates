@@ -11,7 +11,8 @@ function escapeXml(text: string): string {
   return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
-// The blog feed, prerendered at build time. Skips drafts like the index.
+// The feed, prerendered at build time. Empty until the `blog` example adds
+// posts — then every non-draft entry shows up here on its own.
 // Feed links are absolute (see `src/lib/site.ts` for the origin).
 export const GET: APIRoute = async () => {
   const origin = siteUrl();
@@ -32,8 +33,8 @@ export const GET: APIRoute = async () => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>${escapeXml(siteBrand.name)} blog</title>
-    <link>${origin}/blog</link>
+    <title>${escapeXml(siteBrand.name)}</title>
+    <link>${origin}/</link>
     <description>${escapeXml(siteBrand.description)}</description>
 ${items}
   </channel>

@@ -30,10 +30,9 @@ footer, and the favicon (regenerated from it at config load — never commit
 
 ## Pages
 
-- `pages/index.tsx` — the `/` page: a D1-backed checklist demo (add,
-  complete, edit, delete, filters) to copy, then delete in one commit.
-- `pages/index.server.ts` — loader + action: they run in the Worker, and
-  the page reads them as props (`InferProps`) or calls them with `useForm`.
+- `pages/index.tsx` — the `/` page: a branded landing with a neutral "nothing here yet" state.
+- `pages/index.server.ts` — the head tags for `/`. Pages with data add a loader + action here.
+- `pages/_nav.ts` — the nav in one place: Home and Settings. A new page is one route file plus one line here.
 - `pages/settings.tsx` — theme switch, install button, and the brand values
   from `brand.json`.
 - `middleware/01.not-found.ts` — the 404 page for unknown URLs (a
@@ -60,8 +59,9 @@ network, so reloads show fresh D1 data. Rename the app in `brand.json`.
 ## Bindings
 
 `void.config.ts` declares the Worker in its `cloudflare` section. The
-template ships one D1 database, used by the checklist demo; run
-`bun run build` after editing bindings (they are read from the built config):
+template ships one D1 database with no tables yet — the first feature adds
+its migration. Run `bun run build` after editing bindings (they are read
+from the built config):
 
 ```ts
 d1_databases: [{ binding: "DB", database_name: "app-db" }],
@@ -69,10 +69,8 @@ d1_databases: [{ binding: "DB", database_name: "app-db" }],
 
 The platform provisions the database per app on first deploy. Outer applies
 the committed `db/migrations/` files on deploy before the new code goes
-live — never edit an applied migration, add a new one. A `CREATE TABLE IF
-NOT EXISTS` backstop in `pages/index.server.ts` covers local previews,
-which run no migrations. Read the binding in a server module
-with `env` from `cloudflare:workers`.
+live — never edit an applied migration, add a new one. Read the binding in
+a server module with `env` from `cloudflare:workers`.
 
 Secrets: set them as env vars on the app (Outer passes them to the build
 and the fleet), never in `void.config.ts`.
