@@ -8,6 +8,17 @@ import { defineHandler } from "void";
 const KEY_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|gif|avif)$/;
 
+// The only types the upload action accepts (see IMAGE_TYPES in
+// `pages/photos.server.ts`). Re-checked here at serve time: a row whose
+// type is not on this list serves as a download, never inline.
+const IMAGE_CONTENT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+]);
+
 interface PhotoBindings {
   DB: D1Database;
   PHOTOS?: R2Bucket;
@@ -34,9 +45,18 @@ export const GET = defineHandler(async (c) => {
     return c.notFound();
   }
   const headers = new Headers();
-  headers.set("Content-Type", row.content_type);
+  if (IMAGE_CONTENT_TYPES.has(row.content_type)) {
+    headers.set("Content-Type", row.content_type);
+  } else {
+    headers.set("Content-Type", "application/octet-stream");
+    headers.set("Content-Disposition", "attachment");
+  }
   headers.set("Content-Length", String(object.size));
-  headers.set("ETag", object.httpEtag);
+  // Some stores answer without an ETag — only send the header when the
+  // object actually has one, instead of caching a bogus value.
+  if (object.httpEtag) {
+    headers.set("ETag", object.httpEtag);
+  }
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
   headers.set("X-Content-Type-Options", "nosniff");
   return new Response(object.body, { headers });

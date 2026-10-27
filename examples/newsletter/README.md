@@ -34,6 +34,9 @@ validator, a `/api/newsletter` route backed by D1, a migration, and tests.
 - Island props are JSON only — never forward an Astro `<slot />` into the form.
 - The button stays disabled until the island hydrates, so a submit can never
   fall back to a GET that leaks the address into history and logs.
+- The route only stores the address behind a same-origin check — before
+  sending mail, confirm it with double opt-in (mail a confirmation link
+  first). Never start bulk-sending to stored addresses unverified.
 - An address already on the list still answers success: confirming a signup
   must not reveal who signed up.
 - All messages and rules live in `src/lib/newsletter.ts` — fix wording there,

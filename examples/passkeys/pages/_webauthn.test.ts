@@ -7,6 +7,8 @@ import {
   b64urlDecode,
   b64urlEncode,
   bytesEqual,
+  decodeCbor,
+  derToRaw,
   parseAuthData,
   sha256,
   verifyAuthentication,
@@ -331,7 +333,7 @@ test("registration rejects the wrong site and wrong challenge", async () => {
   expect(bytesEqual(parsed.rpIdHash, rpIdHash)).toBe(true);
 });
 
-test("session cookies are Secure only on https", () => {
+test("Secure is set everywhere except plain-http loopback", () => {
   expect(sessionCookie("token", true)).toContain("; Secure");
   expect(sessionCookie("token", false)).not.toContain("Secure");
   expect(sessionCookie("token", false)).toContain("HttpOnly");
@@ -343,4 +345,74 @@ test("session cookies are Secure only on https", () => {
   expect(readCookie(null, "session")).toBeNull();
   expect(isSecureRequest("https://my-app.outer.now/sign-in")).toBe(true);
   expect(isSecureRequest("http://localhost:5173/sign-in")).toBe(false);
+  expect(isSecureRequest("http://127.0.0.1:5173/sign-in")).toBe(false);
+  expect(isSecureRequest("http://[::1]:5173/sign-in")).toBe(false);
+  // Fail closed: plain http anywhere else still gets Secure.
+  expect(isSecureRequest("http://my-app.outer.now/sign-in")).toBe(true);
+  expect(isSecureRequest("http://203.0.113.7/sign-in")).toBe(true);
+});
+
+test("registration rejects a COSE key whose alg mismatches its type", async () => {
+  const rpId = "example.test";
+  const origin = "https://example.test";
+  const challenge = b64urlEncode(randomBytes(32));
+  // An EC key claiming RS256: crafted, not from a real authenticator.
+  const ecDevice = await p256Key();
+  const ecMismatch: DeviceKey = { ...ecDevice, cose: new Map(ecDevice.cose).set(3, -257) };
+  await expect(registerDevice(ecMismatch, rpId, origin, challenge)).rejects.toThrow();
+  // An RSA key claiming ES256: same story the other way round.
+  const rsaDevice = await rsaKey();
+  const rsaMismatch: DeviceKey = { ...rsaDevice, cose: new Map(rsaDevice.cose).set(3, -7) };
+  await expect(registerDevice(rsaMismatch, rpId, origin, challenge)).rejects.toThrow();
+});
+
+test("oversized CBOR input is rejected without decoding it", () => {
+  expect(() => decodeCbor(new Uint8Array(8 * 1024 + 1))).toThrow();
+});
+
+test("deeply nested CBOR input is rejected fast", () => {
+  let value: unknown = 0;
+  for (let i = 0; i < 20; i++) {
+    value = [value];
+  }
+  const start = Date.now();
+  expect(() => decodeCbor(encodeCbor(value))).toThrow();
+  expect(Date.now() - start).toBeLessThan(1000);
+});
+
+test("derToRaw consumes every byte and rejects non-minimal integers", () => {
+  const r = new Uint8Array(32);
+  r[0] = 1;
+  const s = new Uint8Array(32);
+  s[0] = 2;
+  const minimal = rawToDer(concat(r, s));
+  expect(derToRaw(minimal)).toHaveLength(64);
+  // Trailing garbage after the two INTEGERs.
+  expect(() => derToRaw(concat(minimal, new Uint8Array([0])))).toThrow();
+  // An unnecessary leading zero on r (next byte needs no sign bit).
+  const padded = concat(new Uint8Array([0]), r);
+  const nonMinimal = concat(
+    new Uint8Array([0x30, 2 + 2 + padded.length + 2 + s.length, 0x02, padded.length]),
+    padded,
+    new Uint8Array([0x02, s.length]),
+    s,
+  );
+  expect(() => derToRaw(nonMinimal)).toThrow();
+});
+
+test("parseAuthData rejects trailing bytes after the COSE key", async () => {
+  const device = await p256Key();
+  const credentialId = randomBytes(32);
+  const rpIdHash = await sha256(textEncoder.encode("example.test"));
+  const authData = concat(
+    rpIdHash,
+    new Uint8Array([0x41]),
+    u32be(0),
+    new Uint8Array(16),
+    u16be(credentialId.length),
+    credentialId,
+    encodeCbor(device.cose),
+  );
+  expect(parseAuthData(authData).credentialId).toBe(b64urlEncode(credentialId));
+  expect(() => parseAuthData(concat(authData, new Uint8Array([0])))).toThrow();
 });

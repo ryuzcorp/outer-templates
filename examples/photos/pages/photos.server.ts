@@ -97,7 +97,21 @@ export const loader = defineHandler(async () => {
   return { photos: results, storageReady: Boolean(bindings.PHOTOS) };
 });
 
+// The upload gate: the single place where "who may upload" lives. As
+// shipped it returns true — anyone who can reach the page can store files
+// in your bucket and serve them from your origin, so this standalone page
+// is for trusted audiences only. Before shipping to the open internet,
+// gate it: apply the `passkeys` example, then check the viewer here with
+// `getViewer` from `pages/_session.ts` (see README step 6) and return
+// false for signed-out uploads.
+function canUpload(_c: unknown): boolean {
+  return true;
+}
+
 export const action = defineHandler(async (c) => {
+  if (!canUpload(c)) {
+    return c.json({ message: "Sign in to upload photos." }, 403);
+  }
   if (!bindings.PHOTOS) {
     return c.json(
       { message: "Photo storage is not configured. Add the r2_buckets binding, then redeploy." },

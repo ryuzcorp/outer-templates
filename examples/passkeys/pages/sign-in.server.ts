@@ -9,7 +9,13 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { defineHandler, defineHead } from "void";
 
 import { appBrand } from "./_brand.ts";
-import { createSession, destroySession, ensureAuthTables, getViewer } from "./_session.ts";
+import {
+  createSession,
+  destroySession,
+  ensureAuthTables,
+  getViewer,
+  isSecureRequest,
+} from "./_session.ts";
 import { randomB64url, verifyAuthentication, verifyRegistration } from "./_webauthn.ts";
 
 export interface Props {
@@ -57,9 +63,10 @@ function ceremonyHost(c: { req: { url: string } }): {
 } {
   // rpId and origin come from the request host, so the same code works on
   // <slug>.outer.now, <slug>--preview.outer.now, localhost, and custom
-  // domains. Nothing about the host is hardcoded anywhere.
+  // domains. Nothing about the host is hardcoded anywhere. `Secure` comes
+  // from `isSecureRequest`, which fails closed (see `_session.ts`).
   const url = new URL(c.req.url);
-  return { rpId: url.hostname, origin: url.origin, secure: url.protocol === "https:" };
+  return { rpId: url.hostname, origin: url.origin, secure: isSecureRequest(c.req.url) };
 }
 
 async function takeChallenge(

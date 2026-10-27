@@ -42,8 +42,18 @@ export async function ensureAuthTables(db: D1Database): Promise<D1Database> {
   return db;
 }
 
+// `Secure` unless this is plain-http loopback (local preview). Fail closed:
+// anything that is not recognisably localhost gets `Secure`, so a proxy or
+// deploy that terminates TLS differently never downgrades the cookie. On
+// Outer, apps see https in `request.url` (trusted forwarded headers the
+// cell replaces), so production behaviour is unchanged.
 export function isSecureRequest(url: string): boolean {
-  return new URL(url).protocol === "https:";
+  const parsed = new URL(url);
+  if (parsed.protocol === "https:") {
+    return true;
+  }
+  const host = parsed.hostname.replace(/^\[|\]$/g, "");
+  return host !== "localhost" && host !== "127.0.0.1" && host !== "::1";
 }
 
 export function readCookie(header: string | null, name: string): string | null {
@@ -65,9 +75,10 @@ export function readCookie(header: string | null, name: string): string | null {
 
 function serializeSessionCookie(token: string, maxAge: number, secure: boolean): string {
   let cookie = `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
-  // `Secure` cookies are never sent over http://localhost, so local preview
-  // would sign in and then look signed out. Send `Secure` in production
-  // (https) and leave it off for plain http. See the README gotchas.
+  // `Secure` cookies are never sent over http, so local preview over
+  // plain-http loopback signs in and then looks signed out without it.
+  // `isSecureRequest` decides: Secure everywhere except http loopback.
+  // See the README gotchas.
   if (secure) {
     cookie += "; Secure";
   }

@@ -10,6 +10,11 @@ What you get: `pages/photos.tsx` (upload card + feed),
 `routes/photos/[key].ts` (image route), and
 `db/migrations/0001_photos.sql` (the `photos` table).
 
+> Anyone who can reach `/photos` can upload through it: uploads are
+> public unless gated. The page as copied here is for trusted audiences
+> only — step 6 gates uploads behind sign-in, so do not skip it on the
+> open internet.
+
 ## Steps
 
 1. Call `examples photos` to get the files, then copy each one onto your
@@ -32,10 +37,12 @@ What you get: `pages/photos.tsx` (upload card + feed),
 5. Run `check` before shipping (`stage` → `check` → `ship`, or one
    `commit`), then verify with `look_at_app`: open `/photos`, upload an
    image with a caption, and see it at the top of the feed.
-6. Optional — only signed-in members can upload: apply the `passkeys`
-   example too, then gate the upload action like `members.server.ts`
-   does: read the viewer with `getViewer` from `pages/_session.ts` and
-   reject unsigned uploads.
+6. Gate uploads behind sign-in: apply the `passkeys` example too, then
+   open `canUpload` in `pages/photos.server.ts` (the marked gate) and
+   check the viewer with `getViewer` from `pages/_session.ts`, the way
+   `members.server.ts` does — return false for signed-out uploads, which
+   the action answers with 403. Until then the page accepts uploads from
+   anyone, so finish this step before shipping beyond trusted users.
 
 ## Gotchas
 

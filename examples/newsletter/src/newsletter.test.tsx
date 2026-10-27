@@ -4,6 +4,7 @@ import { renderHtml } from "ilha/test";
 
 import NewsletterForm from "./islands/NewsletterForm.tsx";
 import {
+  isSameOriginRequest,
   isUniqueViolation,
   newsletterError,
   newsletterRequest,
@@ -33,6 +34,18 @@ test("non-string email values normalize to a 422 message, never a throw", () => 
     expect("message" in parsed).toBe(true);
   }
   expect(newsletterRequest({ email: "  you@example.com " })).toEqual({ email: "you@example.com" });
+});
+
+test("the same-origin gate takes Origin, else Sec-Fetch-Site, else Referer", () => {
+  const post = (headers: Record<string, string>) =>
+    new Request("https://site.test/api/newsletter", { method: "POST", headers });
+  expect(isSameOriginRequest(post({ origin: "https://site.test" }))).toBe(true);
+  expect(isSameOriginRequest(post({ origin: "https://evil.test" }))).toBe(false);
+  expect(isSameOriginRequest(post({ "sec-fetch-site": "same-origin" }))).toBe(true);
+  expect(isSameOriginRequest(post({ "sec-fetch-site": "cross-site" }))).toBe(false);
+  expect(isSameOriginRequest(post({ referer: "https://site.test/other" }))).toBe(true);
+  expect(isSameOriginRequest(post({ referer: "https://evil.test/" }))).toBe(false);
+  expect(isSameOriginRequest(post({}))).toBe(false);
 });
 
 test("only a UNIQUE violation reads as already-subscribed", () => {

@@ -92,6 +92,13 @@ export function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
 // Only what WebAuthn needs: unsigned and negative integers, byte and text
 // strings, arrays, maps, and small constants. Indefinite lengths are
 // rejected — authenticators always use definite lengths.
+//
+// Untrusted input stays small and shallow: a real attestation object is a
+// few hundred bytes. Anything over 8 KB or nested deeper than 8 is not a
+// passkey response, so it fails fast instead of burning time and memory.
+
+const MAX_CBOR_BYTES = 8 * 1024;
+const MAX_CBOR_DEPTH = 8;
 
 type Cbor = number | boolean | null | string | Uint8Array | Cbor[] | Map<unknown, Cbor>;
 
@@ -123,7 +130,15 @@ function readArgument(
   throw malformed();
 }
 
-function decodeFirst(bytes: Uint8Array, view: DataView, offset: number): [Cbor, number] {
+function decodeFirst(
+  bytes: Uint8Array,
+  view: DataView,
+  offset: number,
+  depth: number,
+): [Cbor, number] {
+  if (depth > MAX_CBOR_DEPTH) {
+    throw malformed();
+  }
   const head = bytes[offset];
   if (head === undefined) {
     throw malformed();
@@ -171,7 +186,7 @@ function decodeFirst(bytes: Uint8Array, view: DataView, offset: number): [Cbor, 
     const items: Cbor[] = [];
     let at = next;
     for (let i = 0; i < argument; i++) {
-      const [item, after] = decodeFirst(bytes, view, at);
+      const [item, after] = decodeFirst(bytes, view, at, depth + 1);
       items.push(item);
       at = after;
     }
@@ -181,8 +196,8 @@ function decodeFirst(bytes: Uint8Array, view: DataView, offset: number): [Cbor, 
     const entries = new Map<unknown, Cbor>();
     let at = next;
     for (let i = 0; i < argument; i++) {
-      const [key, afterKey] = decodeFirst(bytes, view, at);
-      const [value, afterValue] = decodeFirst(bytes, view, afterKey);
+      const [key, afterKey] = decodeFirst(bytes, view, at, depth + 1);
+      const [value, afterValue] = decodeFirst(bytes, view, afterKey, depth + 1);
       entries.set(key, value);
       at = afterValue;
     }
@@ -192,20 +207,28 @@ function decodeFirst(bytes: Uint8Array, view: DataView, offset: number): [Cbor, 
 }
 
 export function decodeCbor(bytes: Uint8Array): Cbor {
+  if (bytes.length > MAX_CBOR_BYTES) {
+    throw malformed();
+  }
   // Copy so the DataView starts at offset zero even for sliced inputs.
   const owned = Uint8Array.from(bytes);
   const view = new DataView(owned.buffer);
-  const [value, next] = decodeFirst(owned, view, 0);
+  const [value, next] = decodeFirst(owned, view, 0, 0);
   if (next !== owned.length) {
     throw malformed();
   }
   return value;
 }
 
-function decodeCborPrefix(bytes: Uint8Array): Cbor {
+// Like decodeCbor but tolerates trailing bytes, answering where the first
+// value ends so the caller can decide whether the tail is allowed.
+function decodeCborPrefix(bytes: Uint8Array): [Cbor, number] {
+  if (bytes.length > MAX_CBOR_BYTES) {
+    throw malformed();
+  }
   const owned = Uint8Array.from(bytes);
   const view = new DataView(owned.buffer);
-  return decodeFirst(owned, view, 0)[0];
+  return decodeFirst(owned, view, 0, 0);
 }
 
 // --- Authenticator data ---
@@ -237,8 +260,14 @@ export function parseAuthData(authData: Uint8Array): ParsedAuthData {
       throw malformed();
     }
     credentialId = b64urlEncode(authData.slice(55, idEnd));
-    const key = decodeCborPrefix(authData.slice(idEnd));
+    const [key, keyEnd] = decodeCborPrefix(authData.slice(idEnd));
     if (!(key instanceof Map)) {
+      throw malformed();
+    }
+    // Without extensions (ED flag clear) nothing may follow the COSE key:
+    // trailing bytes would be attacker-controlled data the verifier
+    // otherwise ignores. Extensions (ED flag) legitimately append data.
+    if (!(flags & 0x80) && idEnd + keyEnd !== authData.length) {
       throw malformed();
     }
     coseKey = key;
@@ -266,6 +295,14 @@ function coseToJwk(cose: Map<unknown, Cbor>): CoseJwk {
     );
   }
   const type = cose.get(1);
+  // The algorithm must match the key type: an EC2 key claiming RS256 (or
+  // RSA claiming ES256) is a crafted mismatch, not a real authenticator.
+  if (type === 2 && algorithm !== ES256) {
+    throw malformed();
+  }
+  if (type === 3 && algorithm !== RS256) {
+    throw malformed();
+  }
   if (type === 2) {
     const curve = cose.get(-1);
     const x = cose.get(-2);
@@ -339,11 +376,19 @@ function derSpan(signature: Uint8Array, at: number): [number, number] {
 }
 
 // Authenticators sign with DER-encoded ECDSA; Web Crypto wants raw `r || s`.
+// Parsing is strict DER: the outer SEQUENCE length must cover exactly the
+// two INTEGERs and nothing else, every byte is consumed, and each INTEGER
+// must be minimal (one leading zero only to keep a positive value
+// positive). Anything looser lets crafted signatures smuggle bytes past.
 export function derToRaw(signature: Uint8Array): Uint8Array<ArrayBuffer> {
   if ((signature[0] ?? -1) !== 0x30) {
     throw malformed();
   }
-  let pos = derSpan(signature, 1)[0];
+  const [seqStart, seqEnd] = derSpan(signature, 1);
+  if (seqEnd !== signature.length) {
+    throw malformed();
+  }
+  let pos = seqStart;
   const out = new Uint8Array(64);
   for (let i = 0; i < 2; i++) {
     if ((signature[pos] ?? -1) !== 0x02) {
@@ -351,14 +396,28 @@ export function derToRaw(signature: Uint8Array): Uint8Array<ArrayBuffer> {
     }
     const [start, end] = derSpan(signature, pos + 1);
     let part = signature.slice(start, end);
-    while (part.length > 32 && (part[0] ?? 0) === 0) {
+    // A leading zero is minimal only when the next byte needs its sign bit
+    // cleared; anything else (extra zeros, a bare zero, a negative) is
+    // non-minimal DER and rejected.
+    if (part.length === 0) {
+      throw malformed();
+    }
+    if ((part[0] ?? 0) === 0) {
+      if (part.length === 1 || ((part[1] ?? 0) & 0x80) === 0) {
+        throw malformed();
+      }
       part = part.slice(1);
+    } else if (((part[0] ?? 0) & 0x80) !== 0) {
+      throw malformed();
     }
     if (part.length === 0 || part.length > 32) {
       throw malformed();
     }
     out.set(part, i * 32 + (32 - part.length));
     pos = end;
+  }
+  if (pos !== seqEnd) {
+    throw malformed();
   }
   return out;
 }

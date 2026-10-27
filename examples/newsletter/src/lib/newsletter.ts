@@ -30,6 +30,31 @@ export function isUniqueViolation(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return message.includes("UNIQUE constraint failed");
 }
+// Same-origin gate for the signup route: without it any site could POST
+// visitors' addresses here and list-bomb them. `Origin` (fetch) decides
+// when present; otherwise `Sec-Fetch-Site` (navigations), otherwise the
+// `Referer` origin — each compared to the request's own origin. No usable
+// signal means forged, so fail closed.
+export function isSameOriginRequest(request: Request): boolean {
+  const origin = new URL(request.url).origin;
+  const header = request.headers.get("origin");
+  if (header !== null) {
+    return header === origin;
+  }
+  const site = request.headers.get("sec-fetch-site");
+  if (site !== null) {
+    return site === "same-origin";
+  }
+  const referer = request.headers.get("referer");
+  if (referer !== null) {
+    try {
+      return new URL(referer).origin === origin;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
 
 // POST one signup; resolve with a user-facing failure message or null on
 // success. `post` defaults to the global fetch and is injectable for tests.

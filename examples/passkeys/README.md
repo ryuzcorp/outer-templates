@@ -46,9 +46,9 @@ browsers — so you add no packages.
 
 ## Gotchas
 
-- The cookie sets `Secure` on https only, so local preview still signs
-  in while production stays `Secure`. That is in `sessionCookie`, not
-  a bug.
+- The cookie is `Secure` everywhere except plain-http loopback (local
+  preview): `isSecureRequest` in `_session.ts` fails closed, so any
+  non-localhost http still gets `Secure`. That is intended, not a bug.
 - Clearing a cookie needs the same flags it was set with, so sign-out
   derives `Secure` from the request the same way. Keep the two in sync.
 - Challenge rows are single-use: restarting a ceremony (or double
@@ -56,6 +56,10 @@ browsers — so you add no packages.
   per attempt, so just try again.
 - Synced passkeys barely move signatures: a steady zero stays valid,
   otherwise the count must move forward or the credential is rejected.
+- Sign-up says "name taken" and sign-in says "no account" on purpose so
+  visitors know which step to take — the tradeoff is that anyone can probe
+  which names exist. That is accepted here; do not "fix" it by merging the
+  messages unless the app's threat model needs it.
 - Only `none` attestation and ES256/RS256 verify; anything else fails
   with the message the visitor sees. That covers every major platform
   when creation requests `attestation: "none"`, which this does.
