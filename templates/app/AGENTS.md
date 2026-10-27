@@ -7,6 +7,8 @@ There is no demo to remove and no starter code to delete.
 
 - Pages are `pages/<route>.tsx` + `pages/<route>.server.ts` (loader + action). List each page
   in `pages/_nav.ts` so it shows up in the header, sidebar, and phone tab bar.
+- Icons: nav items carry a Lucide icon node — pick any name from
+  https://lucide.dev/icons and import it in `pages/_nav.ts`.
 - Data: add `db/migrations/0001_<what>.sql` (never edit an applied migration); read it with `env.DB`.
 - Rename or rebrand only in `brand.json`.
 - Copy proven patterns from examples: call the Outer tool `examples`
@@ -16,10 +18,13 @@ There is no demo to remove and no starter code to delete.
   - `photos` — photo upload to R2 with a feed.
 - Commit small and check the result with `look_at_app`.
 
-You edit this app through Outer's MCP tools: `commit` with exact-match `edits`, one idea per message.
-Outer builds and deploys; the call returns `success` with the URL, `failed` with the log, or `blocked`
-with the lines to fix. After touching server code, read `app_logs`. Locally, `bun run fmt` formats
-and `bun run check` typechecks, lints, and tests.
+You edit this app through Outer's MCP tools — you have no shell. Put file
+contents in `commit` (ships at once) or `stage` them, then run `check`
+(install, typecheck, lint, and tests in Outer's sandbox), then `ship`.
+Outer applies `db/migrations/*.sql` on deploy and returns `success` with
+the URL, `failed` with the log, or `blocked` with the lines to fix. After
+touching server code, read `app_logs`; verify visuals with `look_at_app`
+and console errors with `app_errors`.
 
 ## Files
 
@@ -33,7 +38,7 @@ and `bun run check` typechecks, lints, and tests.
 - `pages/_pwa.ts` — service-worker registration + install-prompt hook.
 - `scripts/brand.mjs` — draws `public/favicon.svg` from `brand.json` at config load. Never commit generated icons.
 - `pages/layout.tsx` — wraps every page: header, desktop nav, phone tab bar, tablet footer. `app.css` is Tailwind + daisyUI.
-- `void.config.ts` — Worker name, document `head` (from `brand.json`), bindings. Edits need `bun run build`.
+- `void.config.ts` — Worker name, document `head` (from `brand.json`), bindings. Edits take effect on the next deploy.
 
 ## Ilha
 
@@ -129,7 +134,7 @@ console lists instances but can't show their contents.
 
 `brand.json` is the one place naming the app. The build renders it into the document head, the PWA manifest, the
 header and footer, and the favicon (`scripts/brand.mjs` draws `public/favicon.svg` at config load; `pwaAssets`
-regenerates PNGs every build). After changing it, run `bun run build`. Free apps show an `outer.now` badge: keep
+regenerates PNGs every build). After changing it, ship again so the icons and manifest pick it up. Free apps show an `outer.now` badge: keep
 fixed bottom UI clear of it with `var(--outer-badge-space, 0px)`; never hide or restyle `#outer-badge`.
 
 ## PWA

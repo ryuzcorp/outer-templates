@@ -13,13 +13,17 @@ validator, a `/api/newsletter` route backed by D1, a migration, and tests.
 
 ## Steps
 
-1. Copy every file onto the same path in your site.
+1. Call `examples newsletter` to get the files, then copy every file onto
+   the same path in your site in one `commit` (or `stage` them). Outer
+   applies the migration when it deploys; never edit it afterwards.
 2. If your site already has migrations, rename the migration file to the
-   next free number (for example `0002_newsletter.sql`) — never reuse a number.
+   next free number (for example `0002_newsletter.sql`) in the same
+   commit — never reuse a number.
 3. Render the form where you want signups. Import it, then place the tag:
    `import NewsletterForm from "../islands/NewsletterForm.tsx"` and
    `<NewsletterForm client:load />` (from a page one level under `src/pages/`).
-4. Run `bun run check` and `bun run build`, then subscribe once with a real
+4. Run `check` before shipping (`stage` → `check` → `ship`, or one
+   `commit`), then verify with `look_at_app`: subscribe once with a real
    address and once with `not-an-email` to see both paths.
 
 ## Gotchas

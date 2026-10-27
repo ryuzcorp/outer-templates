@@ -14,7 +14,8 @@ is a link, not a signup form — the form lives in the newsletter example.
 
 ## Steps
 
-1. Copy the five files onto the same paths in your site.
+1. Call `examples landing` to get the files, then copy the five files onto
+   the same paths in your site in one `commit` (or `stage` them).
 2. Compose them in `src/pages/index.astro`, replacing the shell's
    "nothing here yet" page, with this snippet:
    ```astro
@@ -42,8 +43,9 @@ is a link, not a signup form — the form lives in the newsletter example.
    are the previous site's copy, not yours.
 4. Point the Hero buttons (`/blog`, `/about`) and the Cta link (`/contact`)
    at pages you actually have — or create those pages first.
-5. Run `bun run check` and `bun run build`, then read the whole page on a
-   phone: buttons need 44px targets and no horizontal scroll.
+5. Run `check` before shipping (`stage` → `check` → `ship`, or one
+   `commit`), then verify with `look_at_app`: read the whole page on a
+   phone — buttons need 44px targets and no horizontal scroll.
 
 ## Gotchas
 

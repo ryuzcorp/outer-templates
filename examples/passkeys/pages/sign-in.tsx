@@ -117,14 +117,15 @@ function Ceremony() {
               fingerprint, or a PIN.
             </p>
           </div>
-          <div role="group" aria-label="Create account or sign in" class="join w-full">
+          <div role="tablist" aria-label="Create account or sign in" class="tabs tabs-box w-full">
             {TABS.map((tab) => (
               <button
                 key={tab.value}
                 type="button"
-                aria-pressed={mode() === tab.value}
+                role="tab"
+                aria-selected={mode() === tab.value}
                 onclick={() => choose(tab.value)}
-                class={`btn join-item min-h-11 flex-1 ${mode() === tab.value ? "btn-primary" : "btn-ghost"}`}
+                class={`tab min-h-11 flex-1 ${mode() === tab.value ? "tab-active" : ""}`}
               >
                 {tab.label}
               </button>

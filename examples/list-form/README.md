@@ -6,32 +6,35 @@ with inline errors, and filtering works as plain links with no JS.
 
 ## Steps
 
-1. Copy every file below into your app at the same path:
+1. Call `examples list-form` to get the files, then copy each one onto
+   your app at the same path in one `commit` (or `stage` them):
    - `pages/_tasks.ts` — shared rules (task shape, filter parsing, text
-     validation). No bindings, so `bun test` can import it directly.
+     validation). No bindings, so tests import it directly.
    - `pages/tasks.tsx` — the list page at `/tasks` with its own `h1`.
    - `pages/tasks.server.ts` — `loader` (reads D1) plus `action`
      (add/toggle/edit/remove). Validation failures answer `422 {errors}`,
      which the forms render inline.
-   - `pages/_tasks.test.tsx` — rules plus render tests. Run `bun test`.
-   - `db/migrations/0001_tasks.sql` — the final `task` table schema.
-2. Add the nav line to `pages/_nav.ts` (reuse an existing icon key —
-   `layout.tsx` only maps `home` and `settings`, so a new key breaks
-   the build):
-   `{ href: "/tasks", label: "Tasks", icon: "settings" },`
-3. Add the migration: if your app already has numbered migrations in
-   `db/migrations/`, rename `0001_tasks.sql` to the next free number
-   (e.g. `0003_tasks.sql`). If the folder holds only `.gitkeep`, keep
-   the name and copy it as-is.
-4. Run `bun run check` (typecheck, lint, format, tests) and
-   `bun run build`. Open `/tasks` on a phone-width viewport.
+   - `pages/_tasks.test.tsx` — rules plus render tests.
+   - `db/migrations/0001_tasks.sql` — the `task` table. Outer applies it
+     when it deploys; never edit it afterwards, add a new migration.
+2. If your app already has numbered migrations in `db/migrations/`,
+   rename the copied file to the next free number (e.g. `0003_tasks.sql`)
+   in the same commit. If the folder holds only `.gitkeep`, keep the name.
+3. Add the nav line to `pages/_nav.ts` in the same commit, with the
+   `ListChecks` icon:
+   `import { House, ListChecks, Settings } from "lucide";`
+   `{ href: "/tasks", label: "Tasks", icon: ListChecks },`
+   Any icon name from https://lucide.dev/icons works — just import it.
+4. Run `check` before shipping (`stage` → `check` → `ship`, or one
+   `commit`), then verify with `look_at_app` at phone width: add an item,
+   complete it, and try each filter.
 
 ## Gotchas
 
 - Forms post to `"/tasks"` and filter links point at `/tasks?filter=…`
   — the shell owns `/`, so never point them back at `/`.
 - The `CREATE TABLE IF NOT EXISTS task` in `tasks.server.ts` is a
-  backstop for `vite preview` (which runs no migrations). Keep it in
+  backstop for preview renders that run no migrations. Keep it in
   sync with the migration file; never put app state in module scope.
 - The `422 { errors: { text } }` shape is the contract: return anything
   else and inline errors stop rendering.

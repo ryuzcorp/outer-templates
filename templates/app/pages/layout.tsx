@@ -1,6 +1,7 @@
 import { Link, useRouter } from "@ilha/void";
-import { ErrorBoundary } from "ilha";
+import { ErrorBoundary, h } from "ilha";
 import type { View } from "ilha";
+import type { IconNode } from "lucide";
 
 import { NAV } from "./_nav.ts";
 import { appBrand, initials, onAccent } from "./_brand.ts";
@@ -26,46 +27,26 @@ export function BrandMark() {
   );
 }
 
-function HomeIcon({ class: cls }: { class?: string }) {
+// Renders a Lucide icon node (plain data from `pages/_nav.ts`): the shared
+// 24px outline style — no fill, currentColor stroke, weight 2, round caps
+// and joins. Children pass straight through `h`, so every tag Lucide uses
+// (`path`, `circle`, `rect`, …) renders with its own attributes.
+function LucideIcon({ icon, class: cls }: { icon: IconNode; class?: string }) {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      stroke-width="1.8"
+      stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
       class={cls ?? "h-5 w-5"}
     >
-      <path d="M3 10.5 12 3l9 7.5" />
-      <path d="M5 9.5V21h14V9.5" />
-      <path d="M10 21v-6h4v6" />
+      {icon.map(([tag, attrs], i) => h(tag, { ...attrs, key: i }))}
     </svg>
   );
 }
-function SettingsIcon({ class: cls }: { class?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      class={cls ?? "h-5 w-5"}
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.04-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.09A1.7 1.7 0 0 0 10.14 3V3a2 2 0 1 1 4 0v.09c0 .68.4 1.3 1.04 1.56.6.25 1.3.1 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.09c.25.6.88 1.04 1.56 1.04H21a2 2 0 1 1 0 4h-.09c-.68 0-1.3.4-1.51 1.04Z" />
-    </svg>
-  );
-}
-
-// `pages/_nav.ts` owns the links; the icon components live here (a `.ts`
-// module can't hold JSX). A page keyed to a missing icon fails the build
-// here, not silently in the tab bar.
-const ICONS = { home: HomeIcon, settings: SettingsIcon };
 
 // One nav link with a clear active state: accent-ink text plus a small
 // indicator. `vertical` renders the phone tab-bar item (icon over label);
@@ -73,13 +54,13 @@ const ICONS = { home: HomeIcon, settings: SettingsIcon };
 function NavLink({
   href,
   label,
-  Icon,
+  icon,
   active,
   vertical,
 }: {
   href: string;
   label: string;
-  Icon: (props: { class?: string }) => View;
+  icon: IconNode;
   active: boolean;
   vertical?: boolean;
 }) {
@@ -101,7 +82,7 @@ function NavLink({
   return (
     <Link href={href} aria-current={active ? "page" : undefined} class={`${base} ${tone} nav-link`}>
       {vertical ? null : indicator}
-      <Icon />
+      <LucideIcon icon={icon} />
       {label}
       {vertical ? indicator : null}
     </Link>
@@ -155,13 +136,7 @@ export default function Layout({ children }: { children?: View }) {
             bottom tab bar instead. */}
           <nav aria-label="Primary" class="hidden gap-1 sm:flex">
             {NAV.map(({ href, label, icon }) => (
-              <NavLink
-                key={href}
-                href={href}
-                label={label}
-                Icon={ICONS[icon]}
-                active={path === href}
-              />
+              <NavLink key={href} href={href} label={label} icon={icon} active={path === href} />
             ))}
           </nav>
         </div>
@@ -174,13 +149,7 @@ export default function Layout({ children }: { children?: View }) {
         </Link>
         <nav aria-label="Primary" class="flex flex-col gap-1">
           {NAV.map(({ href, label, icon }) => (
-            <NavLink
-              key={href}
-              href={href}
-              label={label}
-              Icon={ICONS[icon]}
-              active={path === href}
-            />
+            <NavLink key={href} href={href} label={label} icon={icon} active={path === href} />
           ))}
         </nav>
       </aside>
@@ -218,7 +187,7 @@ export default function Layout({ children }: { children?: View }) {
               key={href}
               href={href}
               label={label}
-              Icon={ICONS[icon]}
+              icon={icon}
               active={path === href}
               vertical
             />

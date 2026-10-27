@@ -16,11 +16,13 @@ There is no demo to remove and no starter copy to delete.
   - `landing` — hero, feature grid, testimonial, FAQ, and CTA sections.
 - Commit small and check the result with `look_at_app`.
 
-You edit this site with Outer's MCP tools: `commit` with exact-match
-`edits`, one idea per message. Outer builds and deploys; the call returns
-`success` with the URL, `failed` with the log, or `blocked` with the lines
-to fix. After touching server code, read `app_logs`. Locally, `bun run fmt`
-formats and `bun run check` typechecks, lints, and tests.
+You edit this site through Outer's MCP tools — you have no shell. Put file
+contents in `commit` (ships at once) or `stage` them, then run `check`
+(install, typecheck, lint, and tests in Outer's sandbox), then `ship`.
+Outer applies `db/migrations/*.sql` on deploy and returns `success` with
+the URL, `failed` with the log, or `blocked` with the lines to fix. After
+touching server code, read `app_logs`; verify visuals with `look_at_app`
+and console errors with `app_errors`.
 
 ## Which template?
 
@@ -126,7 +128,7 @@ nullable columns), because the migration runs while the old code serves.
 
 `brand.json` is the one place naming the site. The build renders it into
 the head tags, header, footer, favicon, and OG card (`scripts/brand.mjs`
-draws them at config load). After changing it, run `bun run build`.
+draws them at config load). After changing it, ship again so the deploy picks it up.
 Free sites show an `outer.now` badge: this layout keeps nothing fixed at
 the bottom, so there is nothing to clear — fixed bottom UI you add (cookie
 bars, toasts) must offset with `var(--outer-badge-space, 0px)`. Never hide
@@ -134,8 +136,8 @@ or restyle `#outer-badge`.
 
 ## Deploy
 
-`bun run build` prerenders the pages, bundles the Worker, and derives
-`dist/wrangler.json` from the adapter's `dist/server/wrangler.json`.
+Shipping builds the site: prerendered pages, the Worker bundle, and
+`dist/wrangler.json` derived from the adapter's `dist/server/wrangler.json`.
 Outer deploys `dist/` with celld. Never hand-write `dist/wrangler.json`
 and never commit `.void-wrangler.jsonc` (generated from `void.config.ts`).
 

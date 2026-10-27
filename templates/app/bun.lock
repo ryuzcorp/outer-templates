@@ -8,6 +8,7 @@
         "daisyui": "^5.7.50",
         "effect": "^4",
         "ilha": "^0.16.0",
+        "lucide": "^1.62.0",
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^5",
@@ -1068,6 +1069,8 @@
     "lru-cache": ["lru-cache@5.1.1", "", { "dependencies": { "yallist": "^3.0.2" } }, "sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w=="],
 
     "lru.min": ["lru.min@1.1.5", "", {}, "sha512-5J9ysMYUpYIg9RF2vJpy9SinEmSviFSe0GyPpCQ4L5QSkLAgeLXlTAOu2ZwWUU5m+0SBl6gUU1R1ZQB3aKypfA=="],
+
+    "lucide": ["lucide@1.62.0", "", {}, "sha512-/8NUdyLCNCHGd103wuw4s4RLs/nZyXhs+cs5dx1qDjv7zFgmExkVr/LUythjxhy+oWIoYbAU8llv+c0Jsz69QQ=="],
 
     "magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
 

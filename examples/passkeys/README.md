@@ -6,20 +6,26 @@ D1 behind an `HttpOnly` cookie, and `/members` is only visible signed in.
 
 There are no dependencies: verification is hand-rolled on Web Crypto
 (`SubtleCrypto` + a small CBOR reader), which runs on workerd, Bun, and
-browsers — so you merge no packages.
+browsers — so you add no packages.
 
-## Install it
+## Steps
 
-1. Copy every file onto the same path: `pages/*` to `pages/`,
-   `db/migrations/0001_accounts.sql` to `db/migrations/`.
+1. Call `examples passkeys` to get the files, then copy each one onto
+   your app at the same path in one `commit` (or `stage` them):
+   `pages/*` to `pages/`, `db/migrations/0001_accounts.sql` to
+   `db/migrations/`. Outer applies the migration when it deploys; never
+   edit it afterwards, add a new migration.
 2. If the app already has migrations, rename the file to the next free
-   number (e.g. `0002_accounts.sql`). Never edit an applied migration.
-3. Add the nav lines in `pages/_nav.ts` (both reuse the `settings` icon,
-   which already exists in `layout.tsx`):
-   `{ href: "/sign-in", label: "Sign in", icon: "settings" },`
-   `{ href: "/members", label: "Members", icon: "settings" },`
-4. Run the dev server once so it applies the migration, then open
-   `/sign-in` and create an account with your device's passkey.
+   number (e.g. `0002_accounts.sql`) in the same commit.
+3. Add the nav lines in `pages/_nav.ts` in the same commit, with fitting
+   icons (`KeyRound` for sign-in, `Users` for members):
+   `import { House, KeyRound, Settings, Users } from "lucide";`
+   `{ href: "/sign-in", label: "Sign in", icon: KeyRound },`
+   `{ href: "/members", label: "Members", icon: Users },`
+   Any icon name from https://lucide.dev/icons works — just import it.
+4. Run `check` before shipping (`stage` → `check` → `ship`, or one
+   `commit`), then verify with `look_at_app`: open `/sign-in`, create an
+   account with your device's passkey, and reach `/members`.
 5. Gate your own pages like `members.server.ts` does: read the viewer
    with `getViewer(db, c.req.header("cookie") ?? null)` from
    `pages/_session.ts`, and `return c.redirect("/sign-in")` when null.
@@ -40,15 +46,15 @@ browsers — so you merge no packages.
 
 ## Gotchas
 
-- `Secure` cookies never reach `http://localhost`, so the cookie sets
-  `Secure` on https only. Production stays `Secure`; local preview
-  still signs in. That is in `sessionCookie`, not a bug.
+- The cookie sets `Secure` on https only, so local preview still signs
+  in while production stays `Secure`. That is in `sessionCookie`, not
+  a bug.
 - Clearing a cookie needs the same flags it was set with, so sign-out
   derives `Secure` from the request the same way. Keep the two in sync.
 - Challenge rows are single-use: restarting a ceremony (or double
   tapping) invalidates the old one — the page starts a fresh challenge
   per attempt, so just try again.
-- Synced passkeys barely count signatures: a steady zero stays valid,
+- Synced passkeys barely move signatures: a steady zero stays valid,
   otherwise the count must move forward or the credential is rejected.
 - Only `none` attestation and ES256/RS256 verify; anything else fails
   with the message the visitor sees. That covers every major platform
