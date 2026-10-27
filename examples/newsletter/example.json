@@ -1,6 +1,9 @@
 {
   "name": "newsletter",
-  "summary": "Email signup island with a shared validator, a D1-backed API route, migration, and tests.",
+  "title": "Newsletter signup",
+  "summary": "Email signup island with a shared validator, a D1-backed API route, a /subscribe page, migration, and tests.",
   "template": "website",
-  "title": "Newsletter signup"
+  "bindings": {
+    "d1_databases": [{ "binding": "DB", "database_name": "site-db", "migrations_dir": "db/migrations" }]
+  }
 }

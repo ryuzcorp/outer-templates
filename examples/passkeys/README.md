@@ -8,29 +8,30 @@ There are no dependencies: verification is hand-rolled on Web Crypto
 (`SubtleCrypto` + a small CBOR reader), which runs on workerd, Bun, and
 browsers — so you add no packages.
 
-## Steps
+## What `add_example` does
 
-1. Call `examples passkeys` to get the files, then copy each one onto
-   your app at the same path in one `commit` (or `stage` them):
-   `pages/*` to `pages/`, `db/migrations/0001_accounts.sql` to
-   `db/migrations/`. Outer applies the migration when it deploys; never
-   edit it afterwards, add a new migration.
-2. If the app already has migrations, rename the file to the next free
-   number (e.g. `0002_accounts.sql`) in the same commit.
-3. Add the nav lines in `pages/_nav.ts` in the same commit, with fitting
-   icons (`KeyRound` for sign-in, `Users` for members):
-   `import { House, KeyRound, Settings, Users } from "lucide";`
-   `{ href: "/sign-in", label: "Sign in", icon: KeyRound },`
-   `{ href: "/members", label: "Members", icon: Users },`
-   Any icon name from https://lucide.dev/icons works — just import it.
-4. Run `check` before shipping (`stage` → `check` → `ship`, or one
-   `commit`), then verify with `look_at_app`: open `/sign-in`, create an
-   account with your device's passkey, and reach `/members`.
-5. Gate your own pages like `members.server.ts` does: read the viewer
-   with `getViewer(db, c.req.header("cookie") ?? null)` from
-   `pages/_session.ts`, and `return c.redirect("/sign-in")` when null.
-6. Sign out with `POST /sign-in` intent `sign-out` (see `signOut()` in
-   `pages/_ceremony.ts`); it deletes the session and clears the cookie.
+In one commit: copies `pages/*` (`sign-in` + `members` pages and server
+modules, `_session.ts`, `_webauthn.ts`, `_ceremony.ts`, `_webauthn.test.ts`),
+copies `db/migrations/0001_accounts.sql` (renumbered past your
+migrations, never reused), and adds the nav lines to `pages/_nav.ts` with
+fitting icons (`KeyRound` for sign-in, `Users` for members).
+
+## Customise
+
+- Rewrite the sign-in and members copy for the app.
+- Gate your own pages like `members.server.ts` does: read the viewer
+  with `getViewer(db, c.req.header("cookie") ?? null)` from
+  `pages/_session.ts`, and `return c.redirect("/sign-in")` when null.
+- Sign out with `POST /sign-in` intent `sign-out` (see `signOut()` in
+  `pages/_ceremony.ts`); it deletes the session and clears the cookie.
+
+## Without `add_example`
+
+Call `examples passkeys` to get the files, then in one commit: copy
+`pages/*` onto `pages/` and the migration into `db/migrations/` (renamed
+past your highest number), and add the two nav lines with their icons.
+Then `check`, `ship`, and `look_at_app`: open `/sign-in`, create an
+account with your device's passkey, and reach `/members`.
 
 ## How it works
 

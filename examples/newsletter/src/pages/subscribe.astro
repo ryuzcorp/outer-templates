@@ -1,0 +1,18 @@
+---
+// A standalone signup page: the newsletter island in a card, reachable at
+// `/subscribe` with no further wiring. The form POSTs to the example's
+// `/api/newsletter` route, which `add_example` binds to D1.
+import Base from "../layouts/Base.astro";
+import NewsletterForm from "../islands/NewsletterForm.tsx";
+import { pageTitle } from "../lib/brand.ts";
+---
+
+<Base title={pageTitle("Subscribe")} description="Get new posts by email.">
+  <section class="card bg-base-100 shadow-sm">
+    <div class="card-body gap-4">
+      <h1 class="text-2xl font-bold tracking-tight">Subscribe</h1>
+      <p class="text-sm opacity-70">New posts by email, whenever they land. No spam.</p>
+      <NewsletterForm client:load />
+    </div>
+  </section>
+</Base>

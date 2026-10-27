@@ -5,6 +5,7 @@
 import { env } from "cloudflare:workers";
 import { defineHandler, defineHead } from "void";
 import { ValidationError } from "void/handler";
+import { ensureAuthTables, getViewer } from "./_session.ts";
 import type { CloudContext, InferProps } from "void";
 
 export type Props = InferProps<typeof loader>;
@@ -89,24 +90,24 @@ async function ensurePhotosTable(): Promise<void> {
   ).run();
 }
 
-export const loader = defineHandler(async () => {
+export const loader = defineHandler(async (c) => {
   await ensurePhotosTable();
   const { results } = await bindings.DB.prepare(
     "SELECT key, caption, content_type, created_at FROM photos ORDER BY id DESC LIMIT 100",
   ).all<PhotoRow>();
-  return { photos: results, storageReady: Boolean(bindings.PHOTOS) };
+  const db = await ensureAuthTables(env.DB);
+  const viewer = await getViewer(db, c.req.header("cookie") ?? null);
+  return { photos: results, storageReady: Boolean(bindings.PHOTOS), signedIn: viewer !== null };
 });
 
-// The upload gate: the single place where "who may upload" lives. As
-// shipped it returns true — anyone who can reach the page can store files
-// in your bucket and serve them from your origin, so this standalone page
-// is for trusted audiences only. Before shipping to the open internet,
-// gate it: apply the `passkeys` example, then check the viewer here with
-// `getViewer` from `pages/_session.ts` (see README step 6) and return
-// false for signed-out uploads. The gate is already async and awaited at
-// the call site, so gating only replaces the body — no signature change.
+// The upload gate: the single place where "who may upload" lives. Only
+// signed-in visitors may store files in the bucket; signed-out uploads are
+// answered 403 and the page shows them a "Sign in to post" link instead of
+// the form. `getViewer` comes from the `passkeys` example's
+// `pages/_session.ts`, which `photos` requires.
 async function canUpload(c: CloudContext): Promise<boolean> {
-  return true;
+  const db = await ensureAuthTables(env.DB);
+  return (await getViewer(db, c.req.header("cookie") ?? null)) !== null;
 }
 
 export const action = defineHandler(async (c) => {

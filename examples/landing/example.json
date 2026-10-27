@@ -1,6 +1,6 @@
 {
   "name": "landing",
-  "summary": "Marketing home page sections: hero, services grid, testimonial, FAQ, and contact call-to-action.",
-  "template": "website",
-  "title": "Landing sections"
+  "title": "Landing sections",
+  "summary": "Marketing home page sections: hero, services grid, testimonial, FAQ, and contact call-to-action. Ships a /landing page composing them, so the result renders as soon as it is applied.",
+  "template": "website"
 }

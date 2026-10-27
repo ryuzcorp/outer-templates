@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { readingTime, WORDS_PER_MINUTE } from "./posts.ts";
+import { readingTime, WORDS_PER_MINUTE } from "./blog.ts";
 
 test("short posts still read as one minute", () => {
   expect(readingTime("Hello, website.")).toBe(1);

@@ -24,7 +24,7 @@ function PhotoCard({ photo }: { photo: Photo }) {
   );
 }
 
-export default function PhotosPage({ photos, storageReady }: Props) {
+export default function PhotosPage({ photos, storageReady, signedIn }: Props) {
   const form = useForm("/photos", { caption: "", photo: null as File | null });
 
   function onFileChange(event: Event) {
@@ -46,48 +46,57 @@ export default function PhotosPage({ photos, storageReady }: Props) {
               </span>
             </div>
           )}
-          <Form form={form} enctype="multipart/form-data" class="flex flex-col gap-3">
-            <div class="fieldset gap-1">
-              <label class="fieldset-legend" for="photo-caption">
-                Caption
-              </label>
-              <input
-                id="photo-caption"
-                name="caption"
-                type="text"
-                maxlength={280}
-                placeholder="Say something about this photo"
-                autocomplete="off"
-                value={form.data.caption as string}
-                oninput={(event) =>
-                  form.setData("caption", (event.currentTarget as HTMLInputElement).value)
-                }
-                class="input w-full"
-              />
-            </div>
-            <div class="fieldset gap-1">
-              <label class="fieldset-legend" for="photo-file">
-                Image
-              </label>
-              <input
-                id="photo-file"
-                name="photo"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-                onchange={onFileChange}
-                class="file-input w-full"
-              />
-              {form.errors.photo ? <p class="text-sm text-error">{form.errors.photo}</p> : null}
-            </div>
-            {form.error ? (
-              <div role="alert" class="alert alert-error alert-soft">
-                <span>{form.error.message}</span>
+          {signedIn ? (
+            <Form form={form} enctype="multipart/form-data" class="flex flex-col gap-3">
+              <div class="fieldset gap-1">
+                <label class="fieldset-legend" for="photo-caption">
+                  Caption
+                </label>
+                <input
+                  id="photo-caption"
+                  name="caption"
+                  type="text"
+                  maxlength={280}
+                  placeholder="Say something about this photo"
+                  autocomplete="off"
+                  value={form.data.caption as string}
+                  oninput={(event) =>
+                    form.setData("caption", (event.currentTarget as HTMLInputElement).value)
+                  }
+                  class="input w-full"
+                />
               </div>
-            ) : null}
-            <button type="submit" disabled={form.pending} class="btn btn-primary min-h-11 w-full">
-              {form.pending ? "Uploading…" : "Upload photo"}
-            </button>
-          </Form>
+              <div class="fieldset gap-1">
+                <label class="fieldset-legend" for="photo-file">
+                  Image
+                </label>
+                <input
+                  id="photo-file"
+                  name="photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  onchange={onFileChange}
+                  class="file-input w-full"
+                />
+                {form.errors.photo ? <p class="text-sm text-error">{form.errors.photo}</p> : null}
+              </div>
+              {form.error ? (
+                <div role="alert" class="alert alert-error alert-soft">
+                  <span>{form.error.message}</span>
+                </div>
+              ) : null}
+              <button type="submit" disabled={form.pending} class="btn btn-primary min-h-11 w-full">
+                {form.pending ? "Uploading…" : "Upload photo"}
+              </button>
+            </Form>
+          ) : (
+            <p class="text-sm opacity-70">
+              Only members can post.{" "}
+              <a href="/sign-in" class="link">
+                Sign in to post
+              </a>
+            </p>
+          )}
         </div>
       </section>
       <section aria-label="Photo feed" class="flex flex-col gap-4">
@@ -98,7 +107,9 @@ export default function PhotosPage({ photos, storageReady }: Props) {
                 No photos yet
               </p>
               <p class="max-w-xs text-sm opacity-70">
-                Be the first to share one — pick an image above and tap Upload photo.
+                {signedIn
+                  ? "Be the first to share one — pick an image above and tap Upload photo."
+                  : "Be the first to share one — sign in to post the first photo."}
               </p>
             </div>
           </div>

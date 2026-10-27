@@ -49,6 +49,7 @@ export default defineConfig({
     // `void db migrate` (and dev-server startup) applies locally; Outer
     // applies the committed files on deploy before the new code goes live.
     d1_databases: [{ binding: "DB", database_name: "app-db", migrations_dir: "db/migrations" }],
+    // outer:bindings — add_example inserts bindings above this line
   },
   worker: {
     compatibility_date: "2026-09-01",

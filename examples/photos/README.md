@@ -1,52 +1,38 @@
 # Photos — upload to R2 with a D1 feed
 
-This example adds a photo-sharing page at `/photos`. Visitors upload an
-image (JPEG, PNG, WebP, GIF, or AVIF, up to 10 MB) with a caption. Each
-upload stores the file in R2 and one row in D1, and the page shows a
-newest-first feed served through a caching image route.
+This example adds a photo-sharing page at `/photos`. Only signed-in
+visitors can upload (images: JPEG, PNG, WebP, GIF, or AVIF, up to 10 MB,
+with a caption). Each upload stores the file in R2 and one row in D1, and
+the page shows a newest-first feed served through a caching image route.
+Signed-out visitors see the feed and a "Sign in to post" link; their
+uploads are answered 403.
 
-What you get: `pages/photos.tsx` (upload card + feed),
-`pages/photos.server.ts` (loader, upload action),
-`routes/photos/[key].ts` (image route), and
-`db/migrations/0001_photos.sql` (the `photos` table).
+## What `add_example` does
 
-> Anyone who can reach `/photos` can upload through it: uploads are
-> public unless gated. The page as copied here is for trusted audiences
-> only — step 6 gates uploads behind sign-in, so do not skip it on the
-> open internet.
+Applies `passkeys` first (uploads are gated on its sessions), then in one
+commit: copies `pages/photos.tsx` (upload card + feed), `pages/photos.server.ts`
+(loader, gated upload action), `routes/photos/[key].ts` (image route), and
+`db/migrations/0001_photos.sql` (renumbered past your migrations, never
+reused); adds the Photos line to `pages/_nav.ts` with the `Camera` icon;
+adds the `PHOTOS` R2 bucket to `void.config.ts`.
 
-## Steps
+## Customise
 
-1. Call `examples photos` to get the files, then copy each one onto your
-   app at the same path in one `commit` (or `stage` them):
-   `pages/photos.tsx`, `pages/photos.server.ts`,
-   `routes/photos/[key].ts`, and `db/migrations/0001_photos.sql`. Outer
-   applies the migration when it deploys; never edit it afterwards.
-2. If your app already has migrations in `db/migrations/`, rename the
-   copied file to the next number (for example `0002_photos.sql`) in the
-   same commit — never reuse a migration number.
-3. Add the Photos line to `pages/_nav.ts` in the same commit, with the
-   `Camera` icon:
-   `import { Camera, House, Settings } from "lucide";`
-   `{ href: "/photos", label: "Photos", icon: Camera },`
-   Any icon name from https://lucide.dev/icons works — just import it.
-4. Add the R2 bucket in `void.config.ts` in the same commit, next to the
-   database: `r2_buckets: [{ binding: "PHOTOS", bucket_name: "photos" }]`
-   inside `cloudflare:`. Keep the single bucket; the code reads it as
-   `env.PHOTOS` from `cloudflare:workers`.
-5. Run `check` before shipping (`stage` → `check` → `ship`, or one
-   `commit`), then verify with `look_at_app`: open `/photos`, upload an
-   image with a caption, and see it at the top of the feed.
-6. Gate uploads behind sign-in: apply the `passkeys` example too, then
-   open `canUpload` in `pages/photos.server.ts` (the marked gate — already
-   `async` and awaited, so only the body changes). Add the import:
-   `import { ensureAuthTables, getViewer } from "./_session.ts";`
-   and replace the body with exactly these two lines:
-   `const db = await ensureAuthTables(env.DB);`
-   `return (await getViewer(db, c.req.header("cookie") ?? null)) !== null;`
-   Signed-out uploads are answered with 403. Until then the page accepts
-   uploads from anyone, so finish this step before shipping beyond trusted
-   users.
+- Rewrite the page copy (`Photos`, the empty-feed text) for the app.
+- Change the 10 MB cap or the accepted types in `IMAGE_TYPES` (both checks
+  run on the server — update the magic-byte check to match).
+- Point the sign-in link and the 403 message at your own auth if you ever
+  replace `passkeys`.
+
+## Without `add_example`
+
+Call `examples photos` to get the files, then in one commit: copy each file
+onto the same path (rename the migration past your highest number), apply
+the `passkeys` example too (the page imports `getViewer` from its
+`pages/_session.ts`), add the nav line (`Camera` icon) and the
+`r2_buckets` binding from the sections below. Then `check`, `ship`, and
+`look_at_app`: open `/photos`, upload an image, and see it at the top of
+the feed; sign out and confirm the form becomes a sign-in link.
 
 ## Gotchas
 
@@ -54,8 +40,8 @@ What you get: `pages/photos.tsx` (upload card + feed),
   picker and the `accept` list are conveniences, not security. The
   type check reads the file's magic bytes, so a renamed script is
   rejected even when the browser claims it is an image.
-- Image URLs contain a random key per upload, so the route caches them
-  for a year. Re-uploading the same picture creates a new URL.
+- Image URLs contain a random key per upload, so the route caches them for
+  a year. Re-uploading the same picture creates a new URL.
 - If the `PHOTOS` binding is missing, the page shows a setup message
   and uploads answer 500 instead of crashing.
 - The image route only serves keys recorded in D1, so nobody can use

@@ -5,17 +5,15 @@
 This app is an empty, branded shell — build what your user asked for.
 There is no demo to remove and no starter code to delete.
 
+- To add a feature, call `add_example {app, name}` (list them with
+  `examples`); it commits working pages you then customise. Write custom
+  code with `commit` for everything else.
 - Pages are `pages/<route>.tsx` + `pages/<route>.server.ts` (loader + action). List each page
   in `pages/_nav.ts` so it shows up in the header, sidebar, and phone tab bar.
 - Icons: nav items carry a Lucide icon node — pick any name from
   https://lucide.dev/icons and import it in `pages/_nav.ts`.
 - Data: add `db/migrations/0001_<what>.sql` (never edit an applied migration); read it with `env.DB`.
 - Rename or rebrand only in `brand.json`.
-- Copy proven patterns from examples: call the Outer tool `examples`
-  to list them, and `examples {name}` to get the files to copy.
-  - `list-form` — a D1-backed list with a server-validated form.
-  - `passkeys` — visitor accounts: sign up and in with a passkey.
-  - `photos` — photo upload to R2 with a feed.
 - Commit small and check the result with `look_at_app`.
 
 You edit this app through Outer's MCP tools — you have no shell. Put file
