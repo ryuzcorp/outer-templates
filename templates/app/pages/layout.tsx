@@ -136,7 +136,16 @@ export default function Layout({ children }: { children?: View }) {
             bottom tab bar instead. */}
           <nav aria-label="Primary" class="hidden gap-1 sm:flex">
             {NAV.map(({ href, label, icon }) => (
-              <NavLink key={href} href={href} label={label} icon={icon} active={path === href} />
+              // Keys are unique per list (`header:`, `sidebar:`, `tab:`):
+              // sibling lists share one parent, so bare `href` keys warn
+              // ILHA005 on every page.
+              <NavLink
+                key={`header:${href}`}
+                href={href}
+                label={label}
+                icon={icon}
+                active={path === href}
+              />
             ))}
           </nav>
         </div>
@@ -149,7 +158,13 @@ export default function Layout({ children }: { children?: View }) {
         </Link>
         <nav aria-label="Primary" class="flex flex-col gap-1">
           {NAV.map(({ href, label, icon }) => (
-            <NavLink key={href} href={href} label={label} icon={icon} active={path === href} />
+            <NavLink
+              key={`sidebar:${href}`}
+              href={href}
+              label={label}
+              icon={icon}
+              active={path === href}
+            />
           ))}
         </nav>
       </aside>
@@ -184,7 +199,7 @@ export default function Layout({ children }: { children?: View }) {
         >
           {NAV.map(({ href, label, icon }) => (
             <NavLink
-              key={href}
+              key={`tab:${href}`}
               href={href}
               label={label}
               icon={icon}

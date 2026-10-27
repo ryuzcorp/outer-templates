@@ -5,7 +5,7 @@
 import { env } from "cloudflare:workers";
 import { defineHandler, defineHead } from "void";
 import { ValidationError } from "void/handler";
-import type { InferProps } from "void";
+import type { CloudContext, InferProps } from "void";
 
 export type Props = InferProps<typeof loader>;
 
@@ -103,13 +103,14 @@ export const loader = defineHandler(async () => {
 // is for trusted audiences only. Before shipping to the open internet,
 // gate it: apply the `passkeys` example, then check the viewer here with
 // `getViewer` from `pages/_session.ts` (see README step 6) and return
-// false for signed-out uploads.
-function canUpload(_c: unknown): boolean {
+// false for signed-out uploads. The gate is already async and awaited at
+// the call site, so gating only replaces the body — no signature change.
+async function canUpload(c: CloudContext): Promise<boolean> {
   return true;
 }
 
 export const action = defineHandler(async (c) => {
-  if (!canUpload(c)) {
+  if (!(await canUpload(c))) {
     return c.json({ message: "Sign in to upload photos." }, 403);
   }
   if (!bindings.PHOTOS) {

@@ -38,11 +38,15 @@ What you get: `pages/photos.tsx` (upload card + feed),
    `commit`), then verify with `look_at_app`: open `/photos`, upload an
    image with a caption, and see it at the top of the feed.
 6. Gate uploads behind sign-in: apply the `passkeys` example too, then
-   open `canUpload` in `pages/photos.server.ts` (the marked gate) and
-   check the viewer with `getViewer` from `pages/_session.ts`, the way
-   `members.server.ts` does — return false for signed-out uploads, which
-   the action answers with 403. Until then the page accepts uploads from
-   anyone, so finish this step before shipping beyond trusted users.
+   open `canUpload` in `pages/photos.server.ts` (the marked gate — already
+   `async` and awaited, so only the body changes). Add the import:
+   `import { ensureAuthTables, getViewer } from "./_session.ts";`
+   and replace the body with exactly these two lines:
+   `const db = await ensureAuthTables(env.DB);`
+   `return (await getViewer(db, c.req.header("cookie") ?? null)) !== null;`
+   Signed-out uploads are answered with 403. Until then the page accepts
+   uploads from anyone, so finish this step before shipping beyond trusted
+   users.
 
 ## Gotchas
 

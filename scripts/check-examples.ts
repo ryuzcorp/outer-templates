@@ -174,6 +174,18 @@ const COMBINED_NAV_IMPORT_ANCHOR = `import { House, Settings } from "lucide";`;
 // The photos README's binding step, applied to the combined app.
 const COMBINED_R2_ANCHOR = `    d1_databases: [{ binding: "DB", database_name: "app-db", migrations_dir: "db/migrations" }],`;
 const COMBINED_R2_LINE = `    r2_buckets: [{ binding: "PHOTOS", bucket_name: "photos" }],`;
+// The newsletter README's binding step, applied to the single-newsletter
+// check: the website shell declares no Worker bindings, so the example
+// only builds with the D1 binding added.
+const NEWSLETTER_D1_ANCHOR = `    assets: { not_found_handling: "404-page" },`;
+const NEWSLETTER_D1_LINE = `    d1_databases: [{ binding: "DB", database_name: "site-db", migrations_dir: "db/migrations" }],`;
+// The photos README's gate step (step 6), applied to the combined app:
+// the gate ships async and awaited, so gating only adds the import and
+// replaces the body — the same edit the README asks the agent for.
+const COMBINED_GATE_IMPORT_ANCHOR = `import { ValidationError } from "void/handler";`;
+const COMBINED_GATE_IMPORT_LINE = `import { ensureAuthTables, getViewer } from "./_session.ts";`;
+const COMBINED_GATE_ANCHOR = `async function canUpload(c: CloudContext): Promise<boolean> {\n  return true;\n}`;
+const COMBINED_GATE_BODY = `async function canUpload(c: CloudContext): Promise<boolean> {\n  const db = await ensureAuthTables(env.DB);\n  return (await getViewer(db, c.req.header("cookie") ?? null)) !== null;\n}`;
 
 function replaceOnce(haystack: string, needle: string, replacement: string, what: string): string {
   if (!haystack.includes(needle)) throw new Error(`combined overlay: ${what} anchor not found`);
@@ -236,7 +248,8 @@ async function checkCombined(examplesDir: string, keep: boolean): Promise<CheckR
         await copyFile(f.abs, dest);
       }
     }
-    // Merge the nav lines (with the README-named icons) and the R2 binding.
+    // Merge the nav lines (with the README-named icons), the R2 binding,
+    // and the gated upload check.
     try {
       const navPath = path.join(workdir, "pages/_nav.ts");
       let nav = await readFile(navPath, "utf8");
@@ -247,6 +260,16 @@ async function checkCombined(examplesDir: string, keep: boolean): Promise<CheckR
       let config = await readFile(configPath, "utf8");
       config = replaceOnce(config, COMBINED_R2_ANCHOR, `${COMBINED_R2_ANCHOR}\n${COMBINED_R2_LINE}`, "void.config.ts r2_buckets");
       await writeFile(configPath, config);
+      const photosPath = path.join(workdir, "pages/photos.server.ts");
+      let photos = await readFile(photosPath, "utf8");
+      photos = replaceOnce(
+        photos,
+        COMBINED_GATE_IMPORT_ANCHOR,
+        `${COMBINED_GATE_IMPORT_ANCHOR}\n${COMBINED_GATE_IMPORT_LINE}`,
+        "pages/photos.server.ts import",
+      );
+      photos = replaceOnce(photos, COMBINED_GATE_ANCHOR, COMBINED_GATE_BODY, "pages/photos.server.ts canUpload");
+      await writeFile(photosPath, photos);
     } catch (e) {
       return { name, ok: false, detail: e instanceof Error ? e.message : String(e) };
     }
@@ -314,6 +337,17 @@ async function checkExample(examplesDir: string, dirName: string, keep: boolean)
       const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as { dependencies?: Record<string, string> };
       pkg.dependencies = { ...(pkg.dependencies ?? {}), ...meta.dependencies };
       await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+    }
+    if (dirName === "newsletter") {
+      const configPath = path.join(workdir, "void.config.ts");
+      let config = await readFile(configPath, "utf8");
+      config = replaceOnce(
+        config,
+        NEWSLETTER_D1_ANCHOR,
+        `${NEWSLETTER_D1_ANCHOR}\n${NEWSLETTER_D1_LINE}`,
+        "void.config.ts d1_databases",
+      );
+      await writeFile(configPath, config);
     }
     for (const cmd of [["bun", "install"], ["bun", "run", "check"], ["bun", "run", "build"]] as const) {
       const { exit, log } = await run([...cmd], workdir);

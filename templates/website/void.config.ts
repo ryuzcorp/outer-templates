@@ -3,6 +3,11 @@
 // uses it (via the generated `.void-wrangler.jsonc`) during build; Outer
 // applies the committed `db/migrations` files on deploy before the new code
 // goes live.
+//
+// This shell is a static asset-only site: it declares no Worker bindings.
+// (An asset-only project with Worker bindings fails its first deploy on
+// celld.) The first server route that needs data adds the D1 binding back —
+// see the `newsletter` example.
 import { defineConfig } from "void/config";
 
 export default defineConfig({
@@ -12,12 +17,9 @@ export default defineConfig({
     // `nodejs_als` is required for `void/*` runtime helpers in Astro
     // (https://void.cloud/integrations/frameworks/astro).
     compatibility_flags: ["nodejs_als"],
-    // The site's D1 database, provisioned by Outer on first deploy. Server
-    // routes (`prerender = false`) read it via `import { env } from
-    // "cloudflare:workers"` — see the `newsletter` example. `migrations_dir`
-    // is the repo folder `void db generate` writes and `void db migrate`
-    // (and dev-server startup) applies locally.
-    d1_databases: [{ binding: "DB", database_name: "site-db", migrations_dir: "db/migrations" }],
+    // Unknown paths serve the built 404 page (`src/pages/404.astro`) with a
+    // real HTTP 404 instead of a plain "Not found" text answer.
+    assets: { not_found_handling: "404-page" },
   },
   worker: {
     compatibility_date: "2026-09-01",
