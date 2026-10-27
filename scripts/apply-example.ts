@@ -1,29 +1,35 @@
 // The one apply implementation: turn example names into file writes on an
 // app tree, following the contract in APPLY-EXAMPLES.md exactly. Outer's
-// Rust engine (slice O) must produce byte-identical results on the same
-// inputs, so the formatting rules below are exact and simple:
+// Rust engine (slice O, crates/outer/src/examples/apply.rs) must produce
+// byte-identical results on the same inputs, so the formatting rules below
+// are exact and simple. The shared golden fixtures in
+// scripts/apply-fixtures/ (mirrored verbatim at
+// crates/outer/tests/fixtures/apply/) pin the writes and every refusal
+// message byte for byte.
 //
 // - Nav icons merge into the braces on the `// outer:nav-icons` line,
-//   deduplicated and sorted byte-wise (`Array.sort`, ASCII = byte order).
-//   New items insert just above the `// outer:nav-items` line with the same
-//   indentation: `{ href: "/x", label: "X", icon: Icon },`. An href already
-//   in the file is skipped.
+//   deduplicated and sorted byte-wise. New items insert just above the
+//   `// outer:nav-items` line with the same indentation:
+//   `{ href: "/x", label: "X", icon: Icon },`. An href already in the file
+//   is skipped (nav is app-only: a website apply with nav refuses).
 // - Each binding key writes one line above the `// outer:bindings` marker
 //   with the marker's indentation:
 //   `r2_buckets: [{ binding: "PHOTOS", bucket_name: "photos" }],`
-//   A binding object serialises as `{ k: "v", ... }` with its keys in
-//   `example.json` order. A key already in the file skips when its trimmed
-//   line is equal, refuses when it differs.
+//   A binding object serialises as `{ k: "v", ... }` with its keys sorted
+//   byte-wise; binding keys insert in byte-wise order per example. A key
+//   already in the file skips when its normalised value is equal, refuses
+//   when it differs.
 // - Migrations renumber to the next free numbers after the tree's highest
 //   existing `db/migrations/NNNN_*.sql`, keeping relative order.
-// - `package.json` merges `dependencies` (existing order kept, new keys
-//   appended in `example.json` order) and writes `JSON.stringify(pkg, null,
-//   2) + "\n"`.
+// - `dependencies` is not supported: an example.json carrying it is
+//   rejected, and add_example never touches package.json (merging it
+//   needs order-preserving edits neither engine does; re-serialising
+//   would reorder the user's file).
 //
 // Validate everything first, then write: a refusal leaves the tree
 // untouched. `check-examples.ts` drives this for every example and the
 // combined cases; `apply-example.test.ts` pins the behaviour.
-import { copyFile, lstat, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export class ApplyError extends Error {}
@@ -42,7 +48,6 @@ export interface ExampleMeta {
   requires?: string[];
   nav?: ExampleNavItem[];
   bindings?: Record<string, Record<string, string>[]>;
-  dependencies?: Record<string, string>;
 }
 
 export interface ApplyRequest {
@@ -61,7 +66,7 @@ export interface ApplyResult {
   added: string[];
   /** Resolved examples already fully present (every copied file identical). */
   skipped: string[];
-  /** Tree-relative paths written, resolution order then path order. */
+  /** Tree-relative paths written, byte-wise order (copies plus nav/config edits). */
   files: string[];
   /** Nav hrefs inserted into `pages/_nav.ts`. */
   nav: string[];
@@ -76,7 +81,7 @@ const CONFIG_FILE = "void.config.ts";
 const NAV_ICONS_MARKER = "// outer:nav-icons";
 const NAV_ITEMS_MARKER = "// outer:nav-items";
 const BINDINGS_MARKER = "// outer:bindings";
-const MIGRATION_RE = /^db\/migrations\/\d+_(.+)$/;
+const MIGRATION_RE = /^db\/migrations\/\d+_(.+)\.sql$/;
 const TREE_MIGRATION_RE = /^(\d+)_.*\.sql$/;
 const MAX_DEPTH = 3;
 
@@ -86,7 +91,7 @@ function fail(message: string): never {
 
 async function pathExists(file: string): Promise<boolean> {
   try {
-    await lstat(file);
+    await readFile(file);
     return true;
   } catch {
     return false;
@@ -95,7 +100,7 @@ async function pathExists(file: string): Promise<boolean> {
 
 export async function loadExampleMeta(examplesDir: string, name: string): Promise<ExampleMeta> {
   const dir = path.join(examplesDir, name);
-  if (!(await pathExists(dir))) fail(`unknown example "${name}" (no directory in ${examplesDir})`);
+  if (!(await pathExists(path.join(dir, "example.json")))) fail(`unknown example "${name}"`);
   let raw: unknown;
   try {
     raw = JSON.parse(await readFile(path.join(dir, "example.json"), "utf8"));
@@ -115,6 +120,8 @@ export async function loadExampleMeta(examplesDir: string, name: string): Promis
     fail(`example "${name}": example.json "title" must be a non-empty string`);
   if (typeof json["summary"] !== "string" || json["summary"].length === 0)
     fail(`example "${name}": example.json "summary" must be a non-empty string`);
+  if (json["dependencies"] !== undefined)
+    fail(`example "${name}": example.json "dependencies" is not supported (examples ship files only; add_example never touches package.json)`);
   const meta: ExampleMeta = {
     name,
     title: json["title"],
@@ -164,16 +171,6 @@ export async function loadExampleMeta(examplesDir: string, name: string): Promis
       });
     }
   }
-  if (json["dependencies"] !== undefined) {
-    const depsJson = json["dependencies"];
-    if (typeof depsJson !== "object" || depsJson === null || Array.isArray(depsJson))
-      fail(`example "${name}": example.json "dependencies" must be an object`);
-    for (const [pkg, range] of Object.entries(depsJson as Record<string, unknown>)) {
-      if (typeof range !== "string" || range.length === 0)
-        fail(`example "${name}": example.json dependency "${pkg}" must be a version-range string`);
-    }
-    meta.dependencies = { ...(depsJson as Record<string, string>) };
-  }
   return meta;
 }
 
@@ -198,6 +195,18 @@ async function collectCopyFiles(examplesDir: string, name: string): Promise<{ re
   return out;
 }
 
+const NAV_ICONS_REFUSAL = `refusing to apply nav: ${NAV_FILE} has no ${NAV_ICONS_MARKER} marker (the nav was restructured). Add the nav lines by hand — see the example README "Without add_example"`;
+async function exampleNames(examplesDir: string): Promise<string[]> {
+  try {
+    return (await readdir(examplesDir, { withFileTypes: true }))
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
 // Resolve `names` depth-first: requires come first, each example once.
 // Refuses cycles and chains deeper than 3.
 export async function resolveExamples(examplesDir: string, names: string[]): Promise<ExampleMeta[]> {
@@ -218,14 +227,15 @@ export async function resolveExamples(examplesDir: string, names: string[]): Pro
     if (chain.length >= MAX_DEPTH) fail(`requires chain deeper than ${MAX_DEPTH}: ${[...chain, name].join(" -> ")}`);
     const m = await meta(name);
     for (const dep of m.requires ?? []) {
-      if (!(await pathExists(path.join(examplesDir, dep)))) fail(`example "${name}" requires unknown example "${dep}"`);
+      if (!(await pathExists(path.join(examplesDir, dep, "example.json")))) fail(`example "${name}" requires unknown example "${dep}"`);
       await visit(dep, [...chain, name]);
     }
     done.add(name);
     resolved.push(m);
   }
   for (const name of names) {
-    if (!(await pathExists(path.join(examplesDir, name)))) fail(`unknown example "${name}" (no directory in ${examplesDir})`);
+    if (!(await pathExists(path.join(examplesDir, name, "example.json"))))
+      fail(`unknown example "${name}"; pick one of: ${(await exampleNames(examplesDir)).join(", ")}`);
     await visit(name, []);
   }
   return resolved;
@@ -253,11 +263,80 @@ async function highestMigration(treeDir: string): Promise<number> {
 }
 
 function bindingValue(bindings: Record<string, string>[]): string {
-  return `[${bindings.map((b) => `{ ${Object.entries(b).map(([k, v]) => `${k}: "${v}"`).join(", ")} }`).join(", ")}]`;
+  const one = (binding: Record<string, string>) =>
+    `{ ${Object.entries(binding)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([k, v]) => `${k}: "${v}"`)
+      .join(", ")} }`;
+  return `[${bindings.map(one).join(", ")}]`;
 }
 
-function indentOf(line: string): string {
-  return line.slice(0, line.length - line.trimStart().length);
+/// Every `href: "..."` value on a line, tolerating spacing variants.
+function scanHrefs(line: string): string[] {
+  const out: string[] = [];
+  let rest = line;
+  for (;;) {
+    const pos = rest.indexOf("href");
+    if (pos === -1) break;
+    rest = rest.slice(pos + 4);
+    const colon = /^\s*:/.exec(rest);
+    if (!colon) continue;
+    const after = rest.slice(colon[0].length).trimStart();
+    if (!after.startsWith('"')) continue;
+    const end = after.indexOf('"', 1);
+    if (end === -1) break;
+    out.push(after.slice(1, end));
+    rest = after.slice(end + 1);
+  }
+  return out;
+}
+
+/// `key` as an object key on `line`: word-boundary match followed by `:`.
+function findKey(line: string, key: string): number | null {
+  let from = 0;
+  for (;;) {
+    const pos = line.indexOf(key, from);
+    if (pos === -1) return null;
+    const before = pos === 0 ? "" : line[pos - 1]!;
+    const beforeOk = pos === 0 || !/[A-Za-z0-9_$]/.test(before);
+    if (beforeOk && line.slice(pos + key.length).trimStart().startsWith(":")) return pos;
+    from = pos + 1;
+  }
+}
+
+/// The value after `key:` in `lines`, from its `[` to the matching `]`,
+/// if the key appears at all.
+function findKeyValue(lines: string[], key: string): string | null {
+  let start: number | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const pos = findKey(lines[i]!, key);
+    if (pos !== null && lines[i]!.slice(pos).includes("[")) {
+      start = i;
+      break;
+    }
+  }
+  if (start === null) return null;
+  // Bracket-match from the first `[` on the key's line.
+  let depth = 0;
+  let begun = false;
+  let value = "";
+  for (let offset = 0; offset < lines.length - start; offset++) {
+    const line = lines[start + offset]!;
+    const from = offset === 0 ? line.indexOf("[") : 0;
+    for (const c of line.slice(from < 0 ? 0 : from)) {
+      if (c === "[") {
+        depth += 1;
+        begun = true;
+      }
+      if (begun) value += c;
+      if (c === "]") {
+        depth -= 1;
+        if (begun && depth === 0) return value;
+      }
+    }
+    if (begun) value += "\n";
+  }
+  return null;
 }
 
 export async function applyExamples(request: ApplyRequest): Promise<ApplyResult> {
@@ -267,6 +346,9 @@ export async function applyExamples(request: ApplyRequest): Promise<ApplyResult>
     if (meta.template !== template)
       fail(`example "${meta.name}" is for the ${meta.template} template and cannot apply to a ${template} app`);
   }
+  const navSource = resolved.find((m) => (m.nav ?? []).length > 0);
+  if (navSource && template !== "app")
+    fail(`example "${navSource.name}" declares nav but the "${template}" template has no nav file`);
 
   // Plan every write before touching the tree: a refusal writes nothing.
   interface PlannedFile {
@@ -279,7 +361,7 @@ export async function applyExamples(request: ApplyRequest): Promise<ApplyResult>
   const added: string[] = [];
   for (const meta of resolved) {
     const copies = await collectCopyFiles(examplesDir, meta.name);
-    let present = copies.length > 0;
+    let present = true;
     for (const { rel, abs } of copies) {
       if (migrationSuffix(rel) !== null) continue; // Migrations renumber, so they never count as applied.
       let treeContent: Buffer | null = null;
@@ -306,22 +388,24 @@ export async function applyExamples(request: ApplyRequest): Promise<ApplyResult>
       }
     }
   }
+  if (added.length === 0) {
+    const all = resolved.map((m) => m.name);
+    fail(`${all.join(", ")} ${all.length === 1 ? "is" : "are"} already applied: every file matches, nothing to do`);
+  }
+  const fresh = resolved.filter((m) => added.includes(m.name));
 
   // Renumber migrations past the tree's highest, in resolution order.
   let nextMigration = (await highestMigration(treeDir)) + 1;
-  const plannedMigrations: { rel: string; abs: string; example: string }[] = [];
-  for (const meta of resolved) {
-    if (skipped.includes(meta.name)) continue;
+  for (const meta of fresh) {
     const migrations = (await collectCopyFiles(examplesDir, meta.name))
       .filter(({ rel }) => migrationSuffix(rel) !== null)
       .sort((a, b) => (a.rel < b.rel ? -1 : 1));
     for (const { rel, abs } of migrations) {
-      const renamed = `db/migrations/${String(nextMigration).padStart(4, "0")}_${migrationSuffix(rel)}`;
+      const renamed = `db/migrations/${String(nextMigration).padStart(4, "0")}_${migrationSuffix(rel)}.sql`;
       nextMigration += 1;
       const clash = planned.get(renamed);
       if (clash) fail(`refusing to apply "${meta.name}": ${renamed} collides (also shipped by "${clash.example}")`);
       planned.set(renamed, { rel: renamed, abs, example: meta.name });
-      plannedMigrations.push({ rel: renamed, abs, example: meta.name });
     }
   }
 
@@ -338,91 +422,90 @@ export async function applyExamples(request: ApplyRequest): Promise<ApplyResult>
   }
 
   // Nav edits: icons merge sorted into the marker line, items insert above
-  // their marker. An href already in the file is skipped.
-  interface NavEdit {
-    icons: string[];
-    items: ExampleNavItem[];
-  }
-  const navEdits: { meta: string; edit: NavEdit }[] = [];
-  const wantsNav = resolved.some((m) => (m.nav ?? []).length > 0);
-  let navText: string | null = null;
+  // their marker. An href already in the file is skipped. Each example
+  // reads the previous example's edits, so shared hrefs insert once.
+  // Only fresh examples participate: skipped ones are already applied.
+  const wantsNav = fresh.some((m) => (m.nav ?? []).length > 0);
+  let navInitial: string | null = null;
+  let navWorking: string | null = null;
+  const insertedNav: string[] = [];
   if (wantsNav) {
+    let initial: string;
     try {
-      navText = await readFile(path.join(treeDir, NAV_FILE), "utf8");
+      initial = await readFile(path.join(treeDir, NAV_FILE), "utf8");
     } catch {
       fail(`refusing to apply nav: ${NAV_FILE} is missing (add the nav lines by hand — see the example README "Without add_example")`);
     }
-    const lines = navText.split("\n");
-    if (!lines.some((line) => line.includes(NAV_ICONS_MARKER)))
-      fail(`refusing to apply nav: ${NAV_FILE} has no ${NAV_ICONS_MARKER} marker (the nav was restructured). Add the nav lines by hand — see the example README "Without add_example"`);
-    if (!lines.some((line) => line.includes(NAV_ITEMS_MARKER)))
+    const first = initial.split("\n");
+    if (!first.some((line) => line.includes(NAV_ICONS_MARKER))) fail(NAV_ICONS_REFUSAL);
+    if (!first.some((line) => line.includes(NAV_ITEMS_MARKER)))
       fail(`refusing to apply nav: ${NAV_FILE} has no ${NAV_ITEMS_MARKER} marker (the nav was restructured). Add the nav lines by hand — see the example README "Without add_example"`);
-    for (const meta of resolved) {
-      const items = (meta.nav ?? []).filter((item) => !navText!.includes(`href: "${item.href}"`));
-      const icons = [...new Set(items.map((item) => item.icon))];
-      if (items.length > 0) navEdits.push({ meta: meta.name, edit: { icons, items } });
+    navInitial = initial;
+    navWorking = initial;
+    for (const meta of fresh) {
+      const have = new Set(navWorking.split("\n").flatMap(scanHrefs));
+      const items = (meta.nav ?? []).filter((item) => !have.has(item.href));
+      if (items.length === 0) continue;
+      const lines = navWorking.split("\n");
+      const wanted = [...new Set(items.map((item) => item.icon))];
+      const at = lines.findIndex((line) => line.includes(NAV_ICONS_MARKER));
+      const line = lines[at]!;
+      const open = line.indexOf("{");
+      const close = line.indexOf("}");
+      if (open === -1 || close === -1 || open >= close) fail(NAV_ICONS_REFUSAL);
+      const current = line
+        .slice(open + 1, close)
+        .split(",")
+        .map((icon) => icon.trim())
+        .filter(Boolean);
+      const merged = [...new Set([...current, ...wanted])].sort();
+      lines[at] = `${line.slice(0, open + 1)} ${merged.join(", ")} ${line.slice(close)}`;
+      const marker = lines.findIndex((line) => line.includes(NAV_ITEMS_MARKER));
+      const markerLine = lines[marker]!;
+      const indent = markerLine.slice(0, markerLine.length - markerLine.trimStart().length);
+      lines.splice(
+        marker,
+        0,
+        ...items.map((item) => `${indent}{ href: "${item.href}", label: "${item.label}", icon: ${item.icon} },`),
+      );
+      insertedNav.push(...items.map((item) => item.href));
+      navWorking = lines.join("\n");
     }
   }
 
-  // Binding edits: one line per key above the marker. An equal entry
-  // skips; a different one refuses.
-  interface BindingEdit {
-    key: string;
-    line: string;
-  }
-  const bindingEdits: { meta: string; edit: BindingEdit }[] = [];
-  const wantsBindings = resolved.some((m) => Object.keys(m.bindings ?? {}).length > 0);
-  let configText: string | null = null;
+  // Binding edits: one line per key above the marker, keys in byte-wise
+  // order per example. An equal entry skips; a different one refuses.
+  const wantsBindings = fresh.some((m) => Object.keys(m.bindings ?? {}).length > 0);
+  let configInitial: string | null = null;
+  let configWorking: string | null = null;
   if (wantsBindings) {
+    let initial: string;
     try {
-      configText = await readFile(path.join(treeDir, CONFIG_FILE), "utf8");
+      initial = await readFile(path.join(treeDir, CONFIG_FILE), "utf8");
     } catch {
       fail(`refusing to apply bindings: ${CONFIG_FILE} is missing (add the bindings by hand — see the example README "Without add_example")`);
     }
-    if (!configText.split("\n").some((line) => line.includes(BINDINGS_MARKER)))
+    if (!initial.split("\n").some((line) => line.includes(BINDINGS_MARKER)))
       fail(`refusing to apply bindings: ${CONFIG_FILE} has no ${BINDINGS_MARKER} marker (the config was restructured). Add the bindings by hand — see the example README "Without add_example"`);
-    for (const meta of resolved) {
-      for (const [key, value] of Object.entries(meta.bindings ?? {})) {
+    configInitial = initial;
+    configWorking = initial;
+    for (const meta of fresh) {
+      for (const key of Object.keys(meta.bindings ?? {}).sort()) {
+        const value = meta.bindings![key]!;
         const expected = `${key}: ${bindingValue(value)},`;
-        const existing = configText
-          .split("\n")
-          .find((line) => new RegExp(`^\\s*${key}\\s*:`).test(line));
-        if (existing !== undefined) {
-          if (existing.trim() !== expected)
-            fail(
-              `refusing to apply "${meta.name}": ${CONFIG_FILE} already declares ${key} with a different value (existing entry wins: ${existing.trim()})`,
-            );
-        } else {
-          bindingEdits.push({ meta: meta.name, edit: { key, line: expected } });
-        }
-      }
-    }
-  }
-
-  // Dependency edits: an existing different version refuses.
-  const dependencyEdits: { meta: string; pkg: string; range: string }[] = [];
-  const wantsDependencies = resolved.some((m) => Object.keys(m.dependencies ?? {}).length > 0);
-  let packageJson: { dependencies?: Record<string, string>; [key: string]: unknown } | null = null;
-  if (wantsDependencies) {
-    let pkgText: string;
-    try {
-      pkgText = await readFile(path.join(treeDir, "package.json"), "utf8");
-    } catch {
-      fail(`refusing to apply dependencies: package.json is missing in the app tree`);
-    }
-    try {
-      packageJson = JSON.parse(pkgText);
-    } catch {
-      fail(`refusing to apply dependencies: package.json is not valid JSON`);
-    }
-    for (const meta of resolved) {
-      for (const [pkg, range] of Object.entries(meta.dependencies ?? {})) {
-        const existing = packageJson!.dependencies?.[pkg];
-        if (existing !== undefined && existing !== range)
+        const lines = configWorking.split("\n");
+        const have = findKeyValue(lines, key);
+        if (have === null) {
+          const at = lines.findIndex((line) => line.includes(BINDINGS_MARKER));
+          const markerLine = lines[at]!;
+          const indent = markerLine.slice(0, markerLine.length - markerLine.trimStart().length);
+          lines.splice(at, 0, `${indent}${expected}`);
+          configWorking = lines.join("\n");
+        } else if (have.replace(/\s+/g, "") !== bindingValue(value).replace(/\s+/g, "")) {
           fail(
-            `refusing to apply "${meta.name}": package.json already depends on ${pkg}@${existing} (wants ${range}); resolve the version by hand`,
+            `refusing to apply "${meta.name}": ${CONFIG_FILE} already declares ${key} with a different value (existing entry wins: ${have.trim()})`,
           );
-        if (existing === undefined) dependencyEdits.push({ meta: meta.name, pkg, range });
+        }
       }
     }
   }
@@ -443,52 +526,17 @@ export async function applyExamples(request: ApplyRequest): Promise<ApplyResult>
     files.push(rel);
   }
 
-  const insertedNav: string[] = [];
-  if (navText !== null && (navEdits.length > 0 || wantsNav)) {
-    const lines = navText.split("\n");
-    const wantedIcons = new Set<string>();
-    for (const { edit } of navEdits) for (const icon of edit.icons) wantedIcons.add(icon);
-    if (wantedIcons.size > 0) {
-      const index = lines.findIndex((line) => line.includes(NAV_ICONS_MARKER));
-      const line = lines[index]!;
-      const open = line.indexOf("{");
-      const close = line.indexOf("}");
-      const current = line
-        .slice(open + 1, close)
-        .split(",")
-        .map((name) => name.trim())
-        .filter(Boolean);
-      const merged = [...new Set([...current, ...wantedIcons])].sort();
-      lines[index] = `${line.slice(0, open + 1)} ${merged.join(", ")} ${line.slice(close)}`;
-    }
-    const freshItems: ExampleNavItem[] = [];
-    for (const { edit } of navEdits) freshItems.push(...edit.items);
-    if (freshItems.length > 0) {
-      const index = lines.findIndex((line) => line.includes(NAV_ITEMS_MARKER));
-      const indent = indentOf(lines[index]!);
-      const insert = freshItems.map((item) => `${indent}{ href: "${item.href}", label: "${item.label}", icon: ${item.icon} },`);
-      lines.splice(index, 0, ...insert);
-      insertedNav.push(...freshItems.map((item) => item.href));
-    }
-    if (wantedIcons.size > 0 || freshItems.length > 0) {
-      await writeFile(path.join(treeDir, NAV_FILE), lines.join("\n"));
-    }
+  if (navWorking !== null && navInitial !== null && navWorking !== navInitial) {
+    await writeFile(path.join(treeDir, NAV_FILE), navWorking);
+    files.push(NAV_FILE);
   }
 
-  if (configText !== null && bindingEdits.length > 0) {
-    const lines = configText.split("\n");
-    const index = lines.findIndex((line) => line.includes(BINDINGS_MARKER));
-    const indent = indentOf(lines[index]!);
-    lines.splice(index, 0, ...bindingEdits.map(({ edit }) => `${indent}${edit.line}`));
-    await writeFile(path.join(treeDir, CONFIG_FILE), lines.join("\n"));
+  if (configWorking !== null && configWorking !== configInitial) {
+    await writeFile(path.join(treeDir, CONFIG_FILE), configWorking);
+    files.push(CONFIG_FILE);
   }
 
-  if (packageJson !== null && dependencyEdits.length > 0) {
-    packageJson.dependencies ??= {};
-    for (const { pkg, range } of dependencyEdits) packageJson.dependencies[pkg] = range;
-    await writeFile(path.join(treeDir, "package.json"), `${JSON.stringify(packageJson, null, 2)}\n`);
-  }
-
+  files.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   return { added, skipped, files, nav: insertedNav };
 }
 

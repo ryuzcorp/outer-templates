@@ -61,7 +61,7 @@ export const NAV = [
 };
 
 describe("golden fixtures", () => {
-  const cases = ["app-combined", "website-bindings", "migration-renumber", "missing-marker", "conflict"];
+  const cases = ["app-combined", "binding-skip", "website-bindings", "migration-renumber", "missing-marker", "conflict"];
   for (const name of cases) {
     test(name, async () => {
       const dir = path.join(FIXTURES, name);
@@ -194,7 +194,7 @@ describe("apply", () => {
     }
   });
 
-  test("second apply is a no-op skip", async () => {
+  test("second apply refuses as already applied", async () => {
     const workdir = await mkdtemp(path.join(tmpdir(), "apply-test-skip-"));
     try {
       await writeTree(workdir, {
@@ -217,8 +217,9 @@ describe("apply", () => {
       const first = await applyExamples(request);
       expect(first.added).toEqual(["newsletter"]);
       expect(first.files.length).toBeGreaterThan(0);
-      const second = await applyExamples(request);
-      expect(second).toEqual({ added: [], skipped: ["newsletter"], files: [], nav: [] });
+      const before = await snapshotTree(workdir);
+      await expect(applyExamples(request)).rejects.toThrow("already applied");
+      expect(await snapshotTree(workdir)).toEqual(before);
     } finally {
       await rm(workdir, { recursive: true, force: true });
     }
@@ -275,7 +276,7 @@ describe("apply", () => {
     }
   });
 
-  test("different dependency version refuses", async () => {
+  test("example.json dependencies are rejected", async () => {
     const examplesDir = await mkdtemp(path.join(tmpdir(), "apply-test-dep-ex-"));
     const workdir = await mkdtemp(path.join(tmpdir(), "apply-test-dep-"));
     try {
@@ -287,14 +288,12 @@ describe("apply", () => {
           template: "app",
           dependencies: { "some-pkg": "^2.0.0" },
         }),
+        "need/README.md": "# Need\n",
         "need/pages/need.ts": "export const need = 1;\n",
       });
-      await writeTree(workdir, {
-        ...NAV_TREE,
-        "package.json": `{"name": "t", "private": true, "dependencies": {"some-pkg": "^1.0.0"}}\n`,
-      });
+      await writeTree(workdir, NAV_TREE);
       await expect(applyExamples({ treeDir: workdir, examplesDir, names: ["need"], template: "app" })).rejects.toThrow(
-        "already depends on some-pkg@^1.0.0",
+        '"dependencies" is not supported',
       );
     } finally {
       await rm(examplesDir, { recursive: true, force: true });

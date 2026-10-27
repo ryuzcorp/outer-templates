@@ -4,6 +4,5 @@
   "summary": "First fixture example.",
   "template": "app",
   "nav": [{ "href": "/alpha", "label": "Alpha", "icon": "Sparkles" }],
-  "bindings": { "r2_buckets": [{ "binding": "ALPHA_BUCKET", "bucket_name": "alpha" }] },
-  "dependencies": { "tiny-pkg": "^2.0.0" }
+  "bindings": { "r2_buckets": [{ "binding": "ALPHA_BUCKET", "bucket_name": "alpha" }] }
 }
