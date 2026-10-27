@@ -56,11 +56,13 @@ example adds the first posts.
 
 ## Database
 
-The site keeps one D1 database (`void.config.ts`, `d1_databases`) with no
-tables yet — the first server route adds its migration. Read the binding
-in a server route with `env.DB` from `cloudflare:workers` (see the
-`newsletter` example). Never edit an applied migration — add a new one
-with `void db generate`.
+The shell is a static asset-only site: `void.config.ts` declares no Worker
+bindings. The first server route that needs data adds the D1 binding there
+(`d1_databases: [{ binding: "DB", database_name: "site-db",
+migrations_dir: "db/migrations" }]` inside `cloudflare:` — see the
+`newsletter` example) and its migration under `db/migrations/`. Read the
+binding in a server route with `env.DB` from `cloudflare:workers`. Never
+edit an applied migration — add a new one with `void db generate`.
 
 Secrets: set them as env vars on the site (Outer passes them to the build
 and the fleet), never in `void.config.ts`.

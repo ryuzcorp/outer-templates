@@ -6,8 +6,12 @@ This site is an empty, branded shell — build what your user asked for.
 There is no demo to remove and no starter copy to delete.
 
 - Pages are files: `src/pages/index.astro` → `/`. A new page is a new file.
-- Data: add `db/migrations/0001_<what>.sql` (never edit an applied
-  migration); server routes read it with `env.DB` from `cloudflare:workers`.
+- This is a static site until you add a server route: pages prerender and
+  `void.config.ts` declares no Worker bindings.
+- Data: a server route opts out with `export const prerender = false` and
+  reads `env.DB` from `cloudflare:workers`. Routes that need data also add
+  the D1 binding in `void.config.ts` — see the `newsletter` example. Add
+  `db/migrations/0001_<what>.sql` (never edit an applied migration).
 - Rename or rebrand only in `brand.json`.
 - Copy proven patterns from examples: call the Outer tool `examples`
   to list them, and `examples {name}` to get the files to copy.

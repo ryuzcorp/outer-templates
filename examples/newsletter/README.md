@@ -22,15 +22,22 @@ validator, a `/api/newsletter` route backed by D1, a migration, and tests.
 3. Render the form where you want signups. Import it, then place the tag:
    `import NewsletterForm from "../islands/NewsletterForm.tsx"` and
    `<NewsletterForm client:load />` (from a page one level under `src/pages/`).
-4. Run `check` before shipping (`stage` → `check` → `ship`, or one
+4. Add the D1 database in `void.config.ts` in the same commit — the shell
+   is static and declares no bindings, so the route has no database
+   without this. Inside `cloudflare:`, next to `name`:
+   `d1_databases: [{ binding: "DB", database_name: "site-db", migrations_dir: "db/migrations" }]`
+   (`src/env.d.ts` already declares the `DB` binding, so no change needed
+   there.)
+5. Run `check` before shipping (`stage` → `check` → `ship`, or one
    `commit`), then verify with `look_at_app`: subscribe once with a real
    address and once with `not-an-email` to see both paths.
 
 ## Gotchas
 
-- No binding step: the site shell already wires the `DB` D1 binding, and the
-  route reads it from `cloudflare:workers`. If you renamed the binding,
-  update the route to match.
+- Without step 4 the route has no database: `env.DB` is undefined and
+  subscribes fail. The shell declares no bindings, so the binding step is
+  required, not optional. If you renamed the binding, update the route to
+  match.
 - Island props are JSON only — never forward an Astro `<slot />` into the form.
 - The button stays disabled until the island hydrates, so a submit can never
   fall back to a GET that leaks the address into history and logs.
