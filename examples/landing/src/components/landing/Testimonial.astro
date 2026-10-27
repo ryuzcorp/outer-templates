@@ -1,0 +1,23 @@
+---
+{/* Social proof: one strong quote beats a wall of logos at this size.
+  The quote and name below are placeholders — rewrite both before launch. */}
+---
+
+<section class="card border border-primary/20 bg-base-100 shadow-sm">
+  <div class="card-body items-center gap-3 py-8 text-center">
+    <div aria-hidden="true" class="flex gap-1 text-ink">
+      {
+        [0, 1, 2, 3, 4].map(() => (
+          <svg viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5">
+            <path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.5L12 17.5l-5.9 3.1 1.2-6.5L2.5 9.5l6.6-.9Z" />
+          </svg>
+        ))
+      }
+    </div>
+    <blockquote class="max-w-xl text-xl leading-snug font-medium text-balance sm:text-2xl">
+      “They rebuilt our site in a month. It loads instantly, and enquiries
+      doubled by spring.”
+    </blockquote>
+    <p class="text-sm opacity-70">Placeholder Client — founder, Example Company</p>
+  </div>
+</section>

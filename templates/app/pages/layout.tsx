@@ -2,6 +2,7 @@ import { Link, useRouter } from "@ilha/void";
 import { ErrorBoundary } from "ilha";
 import type { View } from "ilha";
 
+import { NAV } from "./_nav.ts";
 import { appBrand, initials, onAccent } from "./_brand.ts";
 import "./app.css";
 // /guide/auto-update (SSR/SSG): no index.html entry point, so register the
@@ -25,7 +26,7 @@ export function BrandMark() {
   );
 }
 
-function ChecklistIcon({ class: cls }: { class?: string }) {
+function HomeIcon({ class: cls }: { class?: string }) {
   return (
     <svg
       aria-hidden="true"
@@ -37,12 +38,12 @@ function ChecklistIcon({ class: cls }: { class?: string }) {
       stroke-linejoin="round"
       class={cls ?? "h-5 w-5"}
     >
-      <path d="M9 11.5 11 13.5 15 9.5" />
-      <path d="M12 21.5c-1.5 0-2.8-.3-4-1L4 21.5l1-4c-.7-1.2-1-2.5-1-4 0-5 4-9.5 8-9.5s8 4.5 8 9.5-4 12-8 12Z" />
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V21h14V9.5" />
+      <path d="M10 21v-6h4v6" />
     </svg>
   );
 }
-
 function SettingsIcon({ class: cls }: { class?: string }) {
   return (
     <svg
@@ -61,10 +62,10 @@ function SettingsIcon({ class: cls }: { class?: string }) {
   );
 }
 
-const NAV = [
-  { href: "/", label: "Checklist", Icon: ChecklistIcon },
-  { href: "/settings", label: "Settings", Icon: SettingsIcon },
-];
+// `pages/_nav.ts` owns the links; the icon components live here (a `.ts`
+// module can't hold JSX). A page keyed to a missing icon fails the build
+// here, not silently in the tab bar.
+const ICONS = { home: HomeIcon, settings: SettingsIcon };
 
 // One nav link with a clear active state: accent-ink text plus a small
 // indicator. `vertical` renders the phone tab-bar item (icon over label);
@@ -153,8 +154,14 @@ export default function Layout({ children }: { children?: View }) {
           {/* Tablet widths have room for the links up top; phones get the
             bottom tab bar instead. */}
           <nav aria-label="Primary" class="hidden gap-1 sm:flex">
-            {NAV.map(({ href, label, Icon }) => (
-              <NavLink key={href} href={href} label={label} Icon={Icon} active={path === href} />
+            {NAV.map(({ href, label, icon }) => (
+              <NavLink
+                key={href}
+                href={href}
+                label={label}
+                Icon={ICONS[icon]}
+                active={path === href}
+              />
             ))}
           </nav>
         </div>
@@ -166,8 +173,14 @@ export default function Layout({ children }: { children?: View }) {
           {appBrand.name}
         </Link>
         <nav aria-label="Primary" class="flex flex-col gap-1">
-          {NAV.map(({ href, label, Icon }) => (
-            <NavLink key={href} href={href} label={label} Icon={Icon} active={path === href} />
+          {NAV.map(({ href, label, icon }) => (
+            <NavLink
+              key={href}
+              href={href}
+              label={label}
+              Icon={ICONS[icon]}
+              active={path === href}
+            />
           ))}
         </nav>
       </aside>
@@ -197,15 +210,15 @@ export default function Layout({ children }: { children?: View }) {
         class="fixed inset-x-0 bottom-0 z-40 border-t border-base-300 bg-base-100/95 backdrop-blur sm:hidden"
       >
         <div
-          class="mx-auto grid max-w-2xl grid-cols-2 gap-1 px-3 pt-1"
-          style="padding-bottom:calc(env(safe-area-inset-bottom) + var(--outer-badge-space, 0px))"
+          class="mx-auto grid max-w-2xl gap-1 px-3 pt-1"
+          style={`grid-template-columns:repeat(${NAV.length},minmax(0,1fr));padding-bottom:calc(env(safe-area-inset-bottom) + var(--outer-badge-space, 0px))`}
         >
-          {NAV.map(({ href, label, Icon }) => (
+          {NAV.map(({ href, label, icon }) => (
             <NavLink
               key={href}
               href={href}
               label={label}
-              Icon={Icon}
+              Icon={ICONS[icon]}
               active={path === href}
               vertical
             />

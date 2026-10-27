@@ -1,0 +1,6 @@
+{
+  "name": "photos",
+  "title": "Photo upload with R2 and a D1 feed",
+  "summary": "Upload images (JPEG, PNG, WebP, GIF, or AVIF up to 10 MB) to R2 with a caption. Each upload stores one D1 row and appears in a newest-first feed served through a caching image route.",
+  "template": "app"
+}

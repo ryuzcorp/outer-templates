@@ -1,0 +1,6 @@
+{
+  "name": "blog",
+  "summary": "Journal with a newest-first index, one page per post, reading times, feed and sitemap entries.",
+  "template": "website",
+  "title": "Blog"
+}

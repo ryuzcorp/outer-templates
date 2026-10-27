@@ -1,0 +1,27 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: app template
+        run: |
+          cd templates/app
+          bun install
+          bun run check
+      - name: website template
+        run: |
+          cd templates/website
+          bun install
+          bun run check
+      - name: examples
+        run: |
+          bun install
+          bun run check-examples

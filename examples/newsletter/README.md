@@ -1,0 +1,38 @@
+# Newsletter example
+
+Add an email signup to your site: a `NewsletterForm` island, one shared
+validator, a `/api/newsletter` route backed by D1, a migration, and tests.
+
+## What you get
+
+- `src/islands/NewsletterForm.tsx` — static form first, hydrates in place.
+- `src/lib/newsletter.ts` — one validation rule shared by island and route.
+- `src/pages/api/newsletter.ts` — the POST route (with a CREATE TABLE backstop).
+- `src/newsletter.test.tsx` — tests for validation, the route helpers, and the form.
+- `db/migrations/0001_newsletter.sql` — the `newsletter` table.
+
+## Steps
+
+1. Copy every file onto the same path in your site.
+2. If your site already has migrations, rename the migration file to the
+   next free number (for example `0002_newsletter.sql`) — never reuse a number.
+3. Render the form where you want signups. Import it, then place the tag:
+   `import NewsletterForm from "../islands/NewsletterForm.tsx"` and
+   `<NewsletterForm client:load />` (from a page one level under `src/pages/`).
+4. Run `bun run check` and `bun run build`, then subscribe once with a real
+   address and once with `not-an-email` to see both paths.
+
+## Gotchas
+
+- No binding step: the site shell already wires the `DB` D1 binding, and the
+  route reads it from `cloudflare:workers`. If you renamed the binding,
+  update the route to match.
+- Island props are JSON only — never forward an Astro `<slot />` into the form.
+- The button stays disabled until the island hydrates, so a submit can never
+  fall back to a GET that leaks the address into history and logs.
+- An address already on the list still answers success: confirming a signup
+  must not reveal who signed up.
+- All messages and rules live in `src/lib/newsletter.ts` — fix wording there,
+  never separately in the island and the route.
+- The migration is `IF NOT EXISTS` and matches the route's backstop
+  statement, so applying it twice (migration + first request) is harmless.

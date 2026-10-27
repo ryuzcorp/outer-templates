@@ -18,15 +18,10 @@ interface Props {
 
 const { title, description = siteBrand.description, image = "/og.svg" } = Astro.props;
 const fg = onAccent(siteBrand.accent);
-// `Astro.url.pathname` is the output file (`/index.html`, `/blog.html`),
-// not the route: strip the filename so links can compare against it. Posts
-// (`/blog/<slug>`) highlight their section's link too.
+// `Astro.url.pathname` is the output file (`/index.html`, `/404.html`),
+// not the route: strip the filename so links can compare against it.
 const path = Astro.url.pathname.replace(/(\/index)?\.html$/, "") || "/";
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/blog", label: "Blog" },
-  { href: "/about", label: "About" },
-];
+const links = [{ href: "/", label: "Home" }];
 const isActive = (href: string) => path === href || (href !== "/" && path.startsWith(`${href}/`));
 ---
 
@@ -137,15 +132,6 @@ const isActive = (href: string) => path === href || (href !== "/" && path.starts
               ))
             }
             <li><a href="/rss.xml" class="link link-hover">RSS</a></li>
-          </ul>
-        </nav>
-        {/* Social placeholders: point them at the site's real profiles, or
-          delete the row. */}
-        <nav aria-label="Elsewhere">
-          <ul class="flex flex-wrap justify-center gap-x-5 gap-y-2 opacity-70">
-            <li><a href="https://example.com" class="link link-hover">Mastodon</a></li>
-            <li><a href="https://example.com" class="link link-hover">Are.na</a></li>
-            <li><a href="mailto:hello@example.com" class="link link-hover">Email</a></li>
           </ul>
         </nav>
         <p class="opacity-70">© {new Date().getFullYear()} {siteBrand.name}</p>

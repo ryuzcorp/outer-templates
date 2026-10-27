@@ -33,7 +33,7 @@ function notFoundDocument(): string {
 <div style="background:#fff;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.08);padding:48px 24px;text-align:center">
 <h1 style="margin:0 0 8px;font-size:24px">Page not found</h1>
 <p style="margin:0 0 24px;opacity:.7">The link may be old, or the page may have moved.</p>
-<a href="/" style="display:inline-block;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;background:${escapeHtml(appBrand.accent)};color:${fg}">Back to the checklist</a>
+<a href="/" style="display:inline-block;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;background:${escapeHtml(appBrand.accent)};color:${fg}">Back home</a>
 </div>
 </main>
 </body>

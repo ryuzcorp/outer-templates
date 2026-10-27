@@ -40,10 +40,10 @@ const CELLD_KEYS = [
 ];
 
 /** Write the deploy-root `dist/wrangler.json` celld deploys, derived from the
- * adapter's own `dist/server/wrangler.json` (never handwritten): `main`
- * rewrites to deploy-root-relative `server/…`, the asset directory to
- * `client`, and `vars` to `{}` (Outer patches the site's real env at deploy
- * time). `run_worker_first` stays unset: assets serve first, which suits a
+ * adapter's own wrangler output (never handwritten): `main` rewrites to
+ * deploy-root-relative `server/…`, the asset directory to `client`, and
+ * `vars` to `{}` (Outer patches the site's real env at deploy time).
+ * `run_worker_first` stays unset: assets serve first, which suits a
  * mostly-static site (prerendered pages come straight from the asset layer;
  * only `/api/*` reaches the Worker). celld refuses
  * `dist/client/.assetsignore` outright, so it is removed — its entries need
@@ -51,7 +51,13 @@ const CELLD_KEYS = [
  * asset). D1's `migrations_dir` resolves back to the repo folder, like the
  * app template: the adapter rewrites it relative to `dist/server/`
  * (`../../db/migrations`), which is wrong relative to this deploy root.
- * Runs on `astro:build:done`, after the adapter has written its config. */
+ * A build with no server routes emits no Worker — the adapter leaves its
+ * config next to the assets instead (`dist/client/wrangler.json`). That is
+ * the shell's normal shape (and the `blog`/`landing` examples'): derive the
+ * same keys from it with no `main`; assets serve everything, and the first
+ * `prerender = false` route (see the `newsletter` example) restores the
+ * Worker on the next build. Runs on `astro:build:done`, after the adapter
+ * has written its config. */
 const emitCelldConfig = () => ({
   name: "celld-config",
   hooks: {
@@ -61,15 +67,26 @@ const emitCelldConfig = () => ({
 
       rmSync(path.join(dist, "client", ".assetsignore"), { force: true });
 
-      const emitted = readFileSync(path.join(dist, "server", "wrangler.json"), "utf-8");
-      const adapter = JSON.parse(emitted);
+      let adapter;
+      let adapterMain = null;
+      // The adapter writes its paths relative to its own config file: next
+      // to the Worker bundle (`dist/server/`) when one exists, next to the
+      // deploy root (`dist/`) in a fully static build.
+      let configDir = dist;
+      try {
+        adapter = JSON.parse(readFileSync(path.join(dist, "server", "wrangler.json"), "utf-8"));
+        adapterMain =
+          typeof adapter["main"] === "string" && adapter["main"] ? adapter["main"] : "entry.mjs";
+        configDir = path.join(dist, "server");
+      } catch {
+        // No Worker bundle: derive from the adapter's static config instead.
+        adapter = JSON.parse(readFileSync(path.join(dist, "client", "wrangler.json"), "utf-8"));
+      }
 
       const adapterAssets =
         typeof adapter["assets"] === "object" && adapter["assets"] !== null
           ? adapter["assets"]
           : {};
-      const adapterMain =
-        typeof adapter["main"] === "string" && adapter["main"] ? adapter["main"] : "entry.mjs";
 
       const config = {};
       for (const key of CELLD_KEYS) {
@@ -78,7 +95,9 @@ const emitCelldConfig = () => ({
         }
       }
 
-      config["main"] = `server/${adapterMain}`;
+      if (adapterMain) {
+        config["main"] = `server/${adapterMain}`;
+      }
       config["assets"] = { ...adapterAssets, directory: "client" };
 
       // D1 is keyed by name: every entry carries the repo's migrations
@@ -92,7 +111,7 @@ const emitCelldConfig = () => ({
             const raw = entry["migrations_dir"];
             let dir = "db/migrations";
             if (typeof raw === "string" && raw) {
-              const rel = path.relative(dist, path.resolve(dist, "server", raw));
+              const rel = path.relative(dist, path.resolve(configDir, raw));
               const posix = rel.split(path.sep).join("/");
               const segments = posix.split("/");
               if (

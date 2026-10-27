@@ -30,21 +30,17 @@ bun run build      # prerender + bundle: dist/ + dist/wrangler.json
 `brand.json` at the repo root is the one place that names the site. The
 build renders it into every head tag, the header and footer, and the
 favicon + link-preview card (regenerated from it at config load — never
-commit `public/favicon.svg` or `public/og.svg`). Edit it to rebrand, then
-rewrite the demo landing copy; run `bun run build` so the icons pick it up.
+commit `public/favicon.svg` or `public/og.svg`). Edit it to rebrand; run
+`bun run build` so the icons pick it up.
 
 ## Pages
 
-- `src/pages/index.astro` — the `/` page: hero, feature grid, FAQ, and the
-  newsletter signup. Replace the copy with the site's own.
-- `src/pages/blog/` — the Markdown blog (`index.astro` + `[slug].astro`)
-  with reading time; `rss.xml.ts` and `sitemap.xml.ts` prerender the feed
-  and sitemap (set `SITE_URL` when the site has its own domain).
-- `src/pages/about.astro` — about + contact. `src/pages/404.astro` —
-  unknown URLs.
-- `src/pages/api/newsletter.ts` — a server route (`prerender = false`)
-  that writes signups to D1. Replace it with the site's forms — don't keep
-  the starter around.
+- `src/pages/index.astro` — the `/` page: a branded landing with a neutral
+  "nothing here yet" state.
+- `src/pages/404.astro` — unknown URLs.
+- `src/pages/rss.xml.ts` + `src/pages/sitemap.xml.ts` — the feed and
+  sitemap, prerendered (set `SITE_URL` when the site has its own domain).
+  The `blog` example fills them with posts.
 - `src/islands/` — interactive Ilha components, hydrated with `client:*`.
 - `src/layouts/Base.astro` — wraps every page: brand head tags (charset
   and viewport first), header with the brand mark, footer.
@@ -55,15 +51,16 @@ rewrite the demo landing copy; run `bun run build` so the icons pick it up.
 
 Posts live in `src/content/posts/` as Markdown with `title`, `description`
 and `date` frontmatter; `draft: true` keeps a post out of the build. The
-schema is `src/content.config.ts`.
+schema is `src/content.config.ts`. The folder starts empty — the `blog`
+example adds the first posts.
 
 ## Database
 
-The site keeps one D1 database (`void.config.ts`, `d1_databases`): the
-newsletter table in `db/migrations/0001_newsletter.sql`. Read the binding
-in a server route with `env.DB` from `cloudflare:workers` (see
-`src/pages/api/newsletter.ts`). Never edit an applied migration — add a new
-one with `void db generate`.
+The site keeps one D1 database (`void.config.ts`, `d1_databases`) with no
+tables yet — the first server route adds its migration. Read the binding
+in a server route with `env.DB` from `cloudflare:workers` (see the
+`newsletter` example). Never edit an applied migration — add a new one
+with `void db generate`.
 
 Secrets: set them as env vars on the site (Outer passes them to the build
 and the fleet), never in `void.config.ts`.

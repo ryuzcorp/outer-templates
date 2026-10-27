@@ -1,0 +1,1 @@
+{"name":"outer-templates","private":true,"type":"module","scripts":{"check-examples":"bun scripts/check-examples.ts"}}

@@ -1,0 +1,22 @@
+---
+{/* Contact call-to-action. This links to a contact page — not a signup
+  form. Point `contactHref` at a page you have, or add the newsletter
+  example and replace this section with its form. */}
+interface Props {
+  contactHref?: string;
+}
+
+const { contactHref = "/contact" } = Astro.props;
+---
+
+<section class="card bg-base-100 shadow-sm">
+  <div class="card-body gap-4">
+    <h2 class="card-title text-2xl tracking-tight">Get the notes</h2>
+    <p class="opacity-70">
+      One short email a month: new posts, project notes, nothing else.
+    </p>
+    <div>
+      <a href={contactHref} class="btn btn-primary btn-lg">Get in touch</a>
+    </div>
+  </div>
+</section>

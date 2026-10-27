@@ -1,0 +1,6 @@
+{
+  "name": "newsletter",
+  "summary": "Email signup island with a shared validator, a D1-backed API route, migration, and tests.",
+  "template": "website",
+  "title": "Newsletter signup"
+}
