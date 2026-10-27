@@ -8,8 +8,14 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # The examples job executes example code from the PR; give it no more
+    # than read access, and keep credentials out of the checkout.
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: oven-sh/setup-bun@v2
       - name: app template
         run: |

@@ -22,7 +22,7 @@ bun install
 bun run dev        # Astro dev server on http://localhost:4321
 bun run fmt        # format with oxfmt
 bun run check      # typecheck + lint + format check + tests
-bun run build      # prerender + bundle: dist/ + dist/wrangler.json
+bun run build      # prerender to dist/ + dist/wrangler.json (no Worker bundle until a server route exists)
 ```
 
 ## Brand

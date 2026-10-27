@@ -70,14 +70,15 @@ async function takeChallenge(
   if (typeof id !== "string" || !id) {
     return null;
   }
+  // Consume the challenge in the same statement that reads it: two
+  // concurrent finishes with the same id must not both verify against it.
   const row = await db
-    .prepare("SELECT payload FROM challenge WHERE id = ? AND kind = ? AND expires_at > ?")
+    .prepare("DELETE FROM challenge WHERE id = ? AND kind = ? AND expires_at > ? RETURNING payload")
     .bind(id, kind, Math.floor(Date.now() / 1000))
     .first<ChallengeRow>();
   if (!row) {
     return null;
   }
-  await db.prepare("DELETE FROM challenge WHERE id = ?").bind(id).run();
   let parsed: unknown;
   try {
     parsed = JSON.parse(row.payload);
@@ -187,23 +188,26 @@ export const action = defineHandler(async (c) => {
     }
     let accountId: number;
     try {
-      const created = await db
-        .prepare("INSERT INTO account (handle, display_name, user_handle) VALUES (?, ?, ?)")
-        .bind(payload.username, payload.username, payload.userId)
-        .run();
+      // One transaction: if the credential insert fails (a duplicate id
+      // raced past the clash check), the account rolls back with it, so
+      // the handle is never left taken with no credential behind it.
+      const [created] = await db.batch([
+        db
+          .prepare("INSERT INTO account (handle, display_name, user_handle) VALUES (?, ?, ?)")
+          .bind(payload.username, payload.username, payload.userId),
+        db
+          .prepare(
+            "INSERT INTO credential (id, account_id, public_key, algorithm, sign_count) SELECT ?, id, ?, ?, ? FROM account WHERE user_handle = ?",
+          )
+          .bind(
+            verified.credentialId,
+            verified.publicKey,
+            verified.algorithm,
+            verified.signCount,
+            payload.userId,
+          ),
+      ]);
       accountId = Number(created.meta.last_row_id);
-      await db
-        .prepare(
-          "INSERT INTO credential (id, account_id, public_key, algorithm, sign_count) VALUES (?, ?, ?, ?, ?)",
-        )
-        .bind(
-          verified.credentialId,
-          accountId,
-          verified.publicKey,
-          verified.algorithm,
-          verified.signCount,
-        )
-        .run();
     } catch {
       return c.json({ error: "That name was just taken. Try another one." }, 409);
     }

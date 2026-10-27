@@ -1,7 +1,10 @@
 -- Passkey accounts, credentials, challenges, and sessions.
 CREATE TABLE account (
+  -- Handles compare case-insensitively everywhere (the lookups use
+  -- COLLATE NOCASE), so the uniqueness rule must too — otherwise `Sam`
+  -- and `sam` could both register and only one of them could sign in.
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  handle TEXT NOT NULL UNIQUE,
+  handle TEXT NOT NULL UNIQUE COLLATE NOCASE,
   display_name TEXT NOT NULL,
   user_handle TEXT NOT NULL UNIQUE,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())

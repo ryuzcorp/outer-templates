@@ -40,7 +40,9 @@ What you get: `pages/photos.tsx` (upload card + feed),
 ## Gotchas
 
 - Both size (10 MB) and type checks run on the server — the file
-  picker and the `accept` list are conveniences, not security.
+  picker and the `accept` list are conveniences, not security. The
+  type check reads the file's magic bytes, so a renamed script is
+  rejected even when the browser claims it is an image.
 - Image URLs contain a random key per upload, so the route caches them
   for a year. Re-uploading the same picture creates a new URL.
 - If the `PHOTOS` binding is missing, the page shows a setup message

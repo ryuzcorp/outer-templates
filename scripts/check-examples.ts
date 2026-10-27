@@ -363,8 +363,14 @@ async function main(): Promise<void> {
     .filter((n) => only.length === 0 || only.includes(n))
     .sort();
   for (const name of only) {
-    if (name !== COMBINED.name && !(await isDir(path.join(dir, name))))
-      fail(`--example ${name}: no such directory in ${dir}`);
+    if (name === COMBINED.name) continue;
+    const full = path.join(dir, name);
+    // stat follows symlinks, so check the link itself first: a symlinked
+    // directory is never an example, and must fail loudly instead of
+    // passing silently when the entries filter skips it below.
+    if ((await lstat(full).catch(() => null))?.isSymbolicLink())
+      fail(`--example ${name}: symlinks are not examples`);
+    if (!(await isDir(full))) fail(`--example ${name}: no such directory in ${dir}`);
   }
   if (entries.length === 0 && !(only.length === 0 || only.includes(COMBINED.name))) {
     console.log("no examples to check.");

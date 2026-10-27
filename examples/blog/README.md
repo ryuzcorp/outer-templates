@@ -8,7 +8,7 @@ Your RSS feed needs no changes — it lists every non-draft post on its own.
 
 - `src/content/posts/*.md` — two sample posts for you to rewrite.
 - `src/pages/blog/index.astro` — the index, with an empty state.
-- `src/pages/blog/[slug].astro` — one page per post.
+- `src/pages/blog/[...slug].astro` — one page per post.
 - `src/lib/posts.ts` — slug + reading-time helpers (overwrites the shell file).
 - `src/lib/posts.test.ts` — tests for the reading-time helper.
 - `src/pages/sitemap.xml.ts` — sitemap with `/blog` and every post (overwrites the shell file).

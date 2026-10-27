@@ -42,6 +42,35 @@ const IMAGE_TYPES: Record<string, string> = {
   "image/avif": "avif",
 };
 
+// `file.type` is the browser's claim, not a fact. Read the first bytes and
+// match the signature for the claimed type, so a renamed script never
+// becomes an unrenderable feed photo.
+async function hasImageSignature(file: File, ext: string): Promise<boolean> {
+  const head = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  const ascii = (from: number, to: number): string => String.fromCharCode(...head.slice(from, to));
+  switch (ext) {
+    case "jpg":
+      return head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
+    case "png":
+      return (
+        head[0] === 0x89 &&
+        ascii(1, 4) === "PNG" &&
+        head[4] === 0x0d &&
+        head[5] === 0x0a &&
+        head[6] === 0x1a &&
+        head[7] === 0x0a
+      );
+    case "gif":
+      return ascii(0, 6) === "GIF87a" || ascii(0, 6) === "GIF89a";
+    case "webp":
+      return ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP";
+    case "avif":
+      return ascii(4, 8) === "ftyp" && ascii(8, 12) === "avif";
+    default:
+      return false;
+  }
+}
+
 interface PhotoRow {
   key: string;
   caption: string;
@@ -49,7 +78,19 @@ interface PhotoRow {
   created_at: string;
 }
 
+// The table lives in `db/migrations/` (0001_photos.sql creates it): Outer
+// applies the committed files on deploy. The CREATE below stays as a
+// backstop — `vite preview` runs no migrations, so a fresh local DB would
+// otherwise miss the table and the loader would 500. `IF NOT EXISTS`, so
+// the two can never disagree.
+async function ensurePhotosTable(): Promise<void> {
+  await bindings.DB.prepare(
+    "CREATE TABLE IF NOT EXISTS photos (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL UNIQUE, caption TEXT NOT NULL DEFAULT '', content_type TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')))",
+  ).run();
+}
+
 export const loader = defineHandler(async () => {
+  await ensurePhotosTable();
   const { results } = await bindings.DB.prepare(
     "SELECT key, caption, content_type, created_at FROM photos ORDER BY id DESC LIMIT 100",
   ).all<PhotoRow>();
@@ -63,6 +104,7 @@ export const action = defineHandler(async (c) => {
       500,
     );
   }
+  await ensurePhotosTable();
   const body = await c.req.parseBody();
   const caption = typeof body["caption"] === "string" ? body["caption"].trim().slice(0, 280) : "";
   const file = body["photo"];
@@ -76,11 +118,21 @@ export const action = defineHandler(async (c) => {
   if (!ext) {
     throw new ValidationError({ photo: "Upload a JPEG, PNG, WebP, GIF, or AVIF image." });
   }
+  if (!(await hasImageSignature(file, ext))) {
+    throw new ValidationError({ photo: "That file is not a valid image. Pick another one." });
+  }
   // The key is random per upload, so browsers can cache each image forever.
   const key = `${crypto.randomUUID()}.${ext}`;
   await bindings.PHOTOS.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
-  await bindings.DB.prepare("INSERT INTO photos (key, caption, content_type) VALUES (?, ?, ?)")
-    .bind(key, caption, file.type)
-    .run();
+  try {
+    await bindings.DB.prepare("INSERT INTO photos (key, caption, content_type) VALUES (?, ?, ?)")
+      .bind(key, caption, file.type)
+      .run();
+  } catch (error) {
+    // The image route only serves keys with a D1 row, so an object
+    // without one is unreachable garbage — delete it before failing.
+    await bindings.PHOTOS.delete(key);
+    throw error;
+  }
   // No return: Void re-runs the loader and the new photo appears in place.
 });

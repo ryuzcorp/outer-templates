@@ -6,10 +6,14 @@ import { appBrand, initials, onAccent } from "./_brand.ts";
 import { initials as scriptInitials, onAccent as scriptOnAccent } from "../scripts/brand.mjs";
 import Home from "./index.tsx";
 
+const escapeText = (text: string): string =>
+  text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 test("the home page shows the brand name and description", async () => {
   const html = await renderHtml(() => <Home />, { markers: false, snapshot: false });
-  expect(html).toContain(appBrand.name);
-  expect(html).toContain(appBrand.description);
+  // Server HTML escapes text nodes (`&`, `<`, `>`), so compare against
+  // the escaped brand values, not the raw ones.
+  expect(html).toContain(escapeText(appBrand.name));
+  expect(html).toContain(escapeText(appBrand.description));
   expect(html).toContain("Nothing here yet");
 });
 

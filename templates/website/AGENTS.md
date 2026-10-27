@@ -136,8 +136,10 @@ or restyle `#outer-badge`.
 
 ## Deploy
 
-Shipping builds the site: prerendered pages, the Worker bundle, and
-`dist/wrangler.json` derived from the adapter's `dist/server/wrangler.json`.
+Shipping builds the site: prerendered pages and a root `dist/wrangler.json`
+derived from the adapter output — `dist/server/wrangler.json` once a server
+route exists (`prerender = false`), otherwise `dist/client/wrangler.json`.
+With no server route there is no Worker bundle and no `main` to look for.
 Outer deploys `dist/` with celld. Never hand-write `dist/wrangler.json`
 and never commit `.void-wrangler.jsonc` (generated from `void.config.ts`).
 
