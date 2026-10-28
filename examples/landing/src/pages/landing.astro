@@ -1,0 +1,22 @@
+---
+// An example home page composing the landing sections, reachable at
+// `/landing` with no further wiring. To make it the actual home page, move
+// this composition into `src/pages/index.astro` and rewrite every word.
+import Base from "../layouts/Base.astro";
+import Cta from "../components/landing/Cta.astro";
+import Faq from "../components/landing/Faq.astro";
+import Features from "../components/landing/Features.astro";
+import Hero from "../components/landing/Hero.astro";
+import Testimonial from "../components/landing/Testimonial.astro";
+import { pageTitle, siteBrand } from "../lib/brand.ts";
+---
+
+<Base title={pageTitle()} description={siteBrand.description}>
+  <div class="flex flex-col gap-10 sm:gap-14">
+    <Hero />
+    <Features />
+    <Testimonial />
+    <Faq />
+    <Cta />
+  </div>
+</Base>

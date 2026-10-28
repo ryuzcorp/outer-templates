@@ -1,1 +1,10 @@
-{"name":"passkeys","summary":"Visitor accounts with passkey sign-up and sign-in, D1 sessions, and a members-only page.","template":"app","title":"Sign in with passkeys"}
+{
+  "name": "passkeys",
+  "title": "Sign in with passkeys",
+  "summary": "Visitor accounts with passkey sign-up and sign-in, D1 sessions, and a members-only page.",
+  "template": "app",
+  "nav": [
+    { "href": "/sign-in", "label": "Sign in", "icon": "KeyRound" },
+    { "href": "/members", "label": "Members", "icon": "Users" }
+  ]
+}

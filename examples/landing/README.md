@@ -3,49 +3,52 @@
 Build your home page from five copyable sections: an accent-wash hero, a
 services grid, a testimonial, an FAQ, and a contact call-to-action. The CTA
 is a link, not a signup form — the form lives in the newsletter example.
+A `/landing` page composing all five ships with the example, so the result
+renders as soon as it is applied.
 
-## What you get
+## What `add_example` does
 
-- `src/components/landing/Hero.astro` — headline, brand line, two buttons.
-- `src/components/landing/Features.astro` — three-card services grid.
-- `src/components/landing/Testimonial.astro` — one quote (placeholder).
-- `src/components/landing/Faq.astro` — three collapsible questions.
-- `src/components/landing/Cta.astro` — contact call-to-action with a link.
+In one commit: copies the five section components
+(`src/components/landing/*.astro`) and `src/pages/landing.astro` (the
+example page composing them).
 
-## Steps
+## Customise
 
-1. Call `examples landing` to get the files, then copy the five files onto
-   the same paths in your site in one `commit` (or `stage` them).
-2. Compose them in `src/pages/index.astro`, replacing the shell's
-   "nothing here yet" page, with this snippet:
-   ```astro
-   ---
-   import Base from "../layouts/Base.astro";
-   import Hero from "../components/landing/Hero.astro";
-   import Features from "../components/landing/Features.astro";
-   import Testimonial from "../components/landing/Testimonial.astro";
-   import Faq from "../components/landing/Faq.astro";
-   import Cta from "../components/landing/Cta.astro";
-   import { pageTitle, siteBrand } from "../lib/brand.ts";
-   ---
+- Rewrite every word: the services, the FAQ answers, and the hero headline
+  are the previous site's copy, not yours.
+- Point the Hero buttons (`/blog`, `/about`) and the Cta link (`/contact`)
+  at pages you actually have — or create those pages first.
+- Make it the home page: move the composition into
+  `src/pages/index.astro`, replacing the shell's "nothing here yet" page.
 
-   <Base title={pageTitle()} description={siteBrand.description}>
-     <div class="flex flex-col gap-10 sm:gap-14">
-       <Hero />
-       <Features />
-       <Testimonial />
-       <Faq />
-       <Cta />
-     </div>
-   </Base>
-   ```
-3. Rewrite every word: the services, the FAQ answers, and the hero headline
-   are the previous site's copy, not yours.
-4. Point the Hero buttons (`/blog`, `/about`) and the Cta link (`/contact`)
-   at pages you actually have — or create those pages first.
-5. Run `check` before shipping (`stage` → `check` → `ship`, or one
-   `commit`), then verify with `look_at_app`: read the whole page on a
-   phone — buttons need 44px targets and no horizontal scroll.
+## Without `add_example`
+
+Call `examples landing` to get the files, then in one commit: copy the
+five files onto the same paths, plus `src/pages/landing.astro`, or compose
+them in `src/pages/index.astro` directly with this snippet:
+```astro
+---
+import Base from "../layouts/Base.astro";
+import Hero from "../components/landing/Hero.astro";
+import Features from "../components/landing/Features.astro";
+import Testimonial from "../components/landing/Testimonial.astro";
+import Faq from "../components/landing/Faq.astro";
+import Cta from "../components/landing/Cta.astro";
+import { pageTitle, siteBrand } from "../lib/brand.ts";
+---
+
+<Base title={pageTitle()} description={siteBrand.description}>
+  <div class="flex flex-col gap-10 sm:gap-14">
+    <Hero />
+    <Features />
+    <Testimonial />
+    <Faq />
+    <Cta />
+  </div>
+</Base>
+```
+Then `check`, `ship`, and `look_at_app`: read the whole page on a phone —
+buttons need 44px targets and no horizontal scroll.
 
 ## Gotchas
 

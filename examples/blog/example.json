@@ -1,6 +1,6 @@
 {
   "name": "blog",
-  "summary": "Journal with a newest-first index, one page per post, reading times, feed and sitemap entries.",
-  "template": "website",
-  "title": "Blog"
+  "title": "Blog",
+  "summary": "Journal with a newest-first index, one page per post, reading times, feed and sitemap entries. Ships its own /blog pages, so the journal renders as soon as it is applied.",
+  "template": "website"
 }

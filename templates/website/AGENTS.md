@@ -5,6 +5,9 @@
 This site is an empty, branded shell — build what your user asked for.
 There is no demo to remove and no starter copy to delete.
 
+- To add a feature, call `add_example {app, name}` (list them with
+  `examples`); it commits working pages you then customise. Write custom
+  code with `commit` for everything else.
 - Pages are files: `src/pages/index.astro` → `/`. A new page is a new file.
 - This is a static site until you add a server route: pages prerender and
   `void.config.ts` declares no Worker bindings.
@@ -13,11 +16,6 @@ There is no demo to remove and no starter copy to delete.
   the D1 binding in `void.config.ts` — see the `newsletter` example. Add
   `db/migrations/0001_<what>.sql` (never edit an applied migration).
 - Rename or rebrand only in `brand.json`.
-- Copy proven patterns from examples: call the Outer tool `examples`
-  to list them, and `examples {name}` to get the files to copy.
-  - `blog` — content-collection posts with an index, reading time, and RSS.
-  - `newsletter` — an email signup island with a D1-backed API route.
-  - `landing` — hero, feature grid, testimonial, FAQ, and CTA sections.
 - Commit small and check the result with `look_at_app`.
 
 You edit this site through Outer's MCP tools — you have no shell. Put file

@@ -20,6 +20,7 @@ export default defineConfig({
     // Unknown paths serve the built 404 page (`src/pages/404.astro`) with a
     // real HTTP 404 instead of a plain "Not found" text answer.
     assets: { not_found_handling: "404-page" },
+    // outer:bindings — add_example inserts bindings above this line
   },
   worker: {
     compatibility_date: "2026-09-01",

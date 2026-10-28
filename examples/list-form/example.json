@@ -1,1 +1,7 @@
-{"name":"list-form","summary":"D1-backed to-do list with add, complete, edit, delete, and filters.","template":"app","title":"List with form"}
+{
+  "name": "list-form",
+  "title": "List with form",
+  "summary": "D1-backed to-do list with add, complete, edit, delete, and filters.",
+  "template": "app",
+  "nav": [{ "href": "/tasks", "label": "Tasks", "icon": "ListChecks" }]
+}

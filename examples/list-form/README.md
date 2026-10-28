@@ -4,30 +4,29 @@ This example adds a D1-backed to-do list at `/tasks`: add, complete,
 edit, delete, and all/active/done filters. The form is server-validated
 with inline errors, and filtering works as plain links with no JS.
 
-## Steps
+## What `add_example` does
 
-1. Call `examples list-form` to get the files, then copy each one onto
-   your app at the same path in one `commit` (or `stage` them):
-   - `pages/_tasks.ts` — shared rules (task shape, filter parsing, text
-     validation). No bindings, so tests import it directly.
-   - `pages/tasks.tsx` — the list page at `/tasks` with its own `h1`.
-   - `pages/tasks.server.ts` — `loader` (reads D1) plus `action`
-     (add/toggle/edit/remove). Validation failures answer `422 {errors}`,
-     which the forms render inline.
-   - `pages/_tasks.test.tsx` — rules plus render tests.
-   - `db/migrations/0001_tasks.sql` — the `task` table. Outer applies it
-     when it deploys; never edit it afterwards, add a new migration.
-2. If your app already has numbered migrations in `db/migrations/`,
-   rename the copied file to the next free number (e.g. `0003_tasks.sql`)
-   in the same commit. If the folder holds only `.gitkeep`, keep the name.
-3. Add the nav line to `pages/_nav.ts` in the same commit, with the
-   `ListChecks` icon:
-   `import { House, ListChecks, Settings } from "lucide";`
-   `{ href: "/tasks", label: "Tasks", icon: ListChecks },`
-   Any icon name from https://lucide.dev/icons works — just import it.
-4. Run `check` before shipping (`stage` → `check` → `ship`, or one
-   `commit`), then verify with `look_at_app` at phone width: add an item,
-   complete it, and try each filter.
+In one commit: copies `pages/_tasks.ts` (shared rules), `pages/tasks.tsx`
+(the list page), `pages/tasks.server.ts` (loader + action),
+`pages/_tasks.test.tsx` (rules + render tests), and
+`db/migrations/0001_tasks.sql` (renumbered past your migrations, never
+reused); adds the Tasks line to `pages/_nav.ts` with the `ListChecks`
+icon.
+
+## Customise
+
+- Rename the page, the fields, and the validation messages in
+  `pages/_tasks.ts` — the rules, labels, and tests read from that one
+  file.
+- Change which page is the home page, or link the list from it.
+
+## Without `add_example`
+
+Call `examples list-form` to get the files, then in one commit: copy
+each file onto the same path (rename the migration past your highest
+number) and add the nav line (`ListChecks` icon). Then `check`, `ship`,
+and `look_at_app` at phone width: add an item, complete it, and try each
+filter.
 
 ## Gotchas
 
