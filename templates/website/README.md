@@ -2,12 +2,12 @@
 
 An [Outer](https://outer.now) website template: prerendered
 [Astro](https://astro.build) pages with [Ilha](https://ilha.build) islands,
-deployed the [Void](https://void.cloud) way on celld.
+deployed the [Void](https://void.cloud) way on cello.
 
 Every site starts as a copy of this repo (Outer’s `create_app` tool with
 `template: "website"`). Agents change code with Outer’s `commit` tool —
 there is no `git push to deploy`. Outer builds (`bun install` +
-`bun run build`) and deploys the result to celld; the tool call returns
+`bun run build`) and deploys the result to cello; the tool call returns
 `success` plus the URL, `failed` plus the log tail, or `blocked` plus the
 offending lines to fix.
 

@@ -2,12 +2,12 @@
 
 An [Outer](https://outer.now) app template: server-rendered
 [Ilha](https://ilha.build) pages on [Void](https://void.cloud), built with
-Vite and served by celld.
+Vite and served by cello.
 
 Every app starts as a copy of this repo (Outer’s `create_app` tool).
 Agents change code with Outer’s `commit` tool — there is no `git push to
 deploy`. Outer builds (`bun install` + `bun run build`) and deploys the
-result to celld; the tool call returns `success` plus the URL, `failed`
+result to cello; the tool call returns `success` plus the URL, `failed`
 plus the log tail, or `blocked` plus the offending lines to fix.
 
 ## Local development

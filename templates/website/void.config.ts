@@ -6,13 +6,13 @@
 //
 // This shell is a static asset-only site: it declares no Worker bindings.
 // (An asset-only project with Worker bindings fails its first deploy on
-// celld.) The first server route that needs data adds the D1 binding back —
+// cello.) The first server route that needs data adds the D1 binding back —
 // see the `newsletter` example.
 import { defineConfig } from "void/config";
 
 export default defineConfig({
   cloudflare: {
-    // The Worker name celld serves the site as.
+    // The Worker name cello serves the site as.
     name: "outer-website",
     // `nodejs_als` is required for `void/*` runtime helpers in Astro
     // (https://void.cloud/integrations/frameworks/astro).
