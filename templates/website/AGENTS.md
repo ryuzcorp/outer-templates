@@ -106,7 +106,7 @@ Every page must work at 360px wide before it looks good on desktop: keep
 `break-words`); `btn`-sized tap targets and full-width inputs; `min-h-dvh`,
 not `min-h-screen`.
 
-## celld
+## cello
 
 `session: false` in `astro.config.mjs` opts out of Astro sessions so the
 build declares no SESSION KV namespace. No Workers AI, Vectorize, or Cache
@@ -142,7 +142,7 @@ Shipping builds the site: prerendered pages and a root `dist/wrangler.json`
 derived from the adapter output — `dist/server/wrangler.json` once a server
 route exists (`prerender = false`), otherwise `dist/client/wrangler.json`.
 With no server route there is no Worker bundle and no `main` to look for.
-Outer deploys `dist/` with celld. Never hand-write `dist/wrangler.json`
+Outer deploys `dist/` with cello. Never hand-write `dist/wrangler.json`
 and never commit `.void-wrangler.jsonc` (generated from `void.config.ts`).
 
 ## Page text

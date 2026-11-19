@@ -29,9 +29,9 @@ writeFileSync(new URL("./public/favicon.svg", import.meta.url), faviconSvg(brand
 /** The app root: this config file's own directory. */
 const APP_ROOT = import.meta.dirname;
 
-/** Top-level keys `celld deploy` accepts. An unknown key fails the deploy,
+/** Top-level keys `cello deploy` accepts. An unknown key fails the deploy,
  * so anything Void emits outside this set is dropped, never passed through. */
-const CELLD_KEYS = [
+const CELLO_KEYS = [
   "$schema",
   "name",
   "main",
@@ -50,16 +50,16 @@ const CELLD_KEYS = [
   "r2_buckets",
 ] as const;
 
-/** Write the deploy-root `dist/wrangler.json` celld deploys, derived from
+/** Write the deploy-root `dist/wrangler.json` cello deploys, derived from
  * Void's own `dist/ssr/wrangler.json` (never handwritten): `main` rewrites
  * to deploy-root-relative `ssr/…`, the asset directory to `client`, and
  * `vars` to `{}` (Outer patches the app's real env at deploy time).
- * Void's Cloudflare-only `dist/client/.assetsignore` is removed: `celld
+ * Void's Cloudflare-only `dist/client/.assetsignore` is removed: `cello
  * deploy` refuses it outright, and its entries need no replacement —
- * `wrangler.json` is celld's config surface (never an asset).
+ * `wrangler.json` is cello's config surface (never an asset).
  * Last in the plugin list so its `closeBundle` runs after Void's emit; when
  * the SSR bundle hasn't closed yet it does nothing and the SSR close writes. */
-const emitCelldConfig = (): Plugin => ({
+const emitCelloConfig = (): Plugin => ({
   closeBundle() {
     const dist = path.resolve(APP_ROOT, "dist");
 
@@ -84,7 +84,7 @@ const emitCelldConfig = (): Plugin => ({
 
     const config: Record<string, unknown> = {};
 
-    for (const key of CELLD_KEYS) {
+    for (const key of CELLO_KEYS) {
       if (key in ssr) {
         config[key] = ssr[key];
       }
@@ -98,7 +98,7 @@ const emitCelldConfig = (): Plugin => ({
     };
 
     // D1 is keyed by name: every entry carries the repo's migrations folder
-    // (`db/migrations`, where `void db generate` writes) so Outer, celld
+    // (`db/migrations`, where `void db generate` writes) so Outer, cello
     // and `void db` agree. Void rewrites the declared dir relative to its
     // own `dist/ssr/wrangler.json` (e.g. `../../db/migrations`), which is
     // wrong relative to this deploy root and fails Outer's validation (no
@@ -132,7 +132,7 @@ const emitCelldConfig = (): Plugin => ({
     config["vars"] = {};
     writeFileSync(path.join(dist, "wrangler.json"), `${JSON.stringify(config, null, 2)}\n`);
   },
-  name: "celld-config",
+  name: "cello-config",
 });
 
 export default defineConfig({
@@ -141,7 +141,7 @@ export default defineConfig({
     // `false`, but @cloudflare/vite-plugin emits worker sourcemaps by
     // default (`getWorkerSourcemap` falls back to `true` unless Vite's
     // `build.sourcemap` or the Worker's `upload_source_maps` opts out) —
-    // this opts the worker/SSR environment out too. celld uploads all of
+    // this opts the worker/SSR environment out too. cello uploads all of
     // dist/, so maps would ship to every deploy for no benefit.
     // https://vite.dev/config/build-options#build-sourcemap
     sourcemap: false,
@@ -192,6 +192,6 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,png,svg,ico}"],
       },
     }),
-    emitCelldConfig(),
+    emitCelloConfig(),
   ],
 });

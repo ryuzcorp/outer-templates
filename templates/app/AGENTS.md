@@ -104,7 +104,7 @@ Every page must work at 360px wide before it looks good on desktop: keep
 `break-words`, `overflow-x-auto` for tables); `btn`-sized tap targets and
 full-width inputs; `min-h-dvh`, not `min-h-screen`.
 
-## celld
+## cello
 
 No module-scope state across requests; `fetch` handlers only. No Workers
 AI, Vectorize, or Cache bindings. No outbound traffic to loopback, private

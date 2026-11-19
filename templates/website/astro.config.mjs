@@ -15,12 +15,12 @@ import { writeBrandAssets } from "./scripts/brand.mjs";
 // are gone and the icons always match the name and accent.
 writeBrandAssets();
 
-/** Top-level keys `celld deploy` accepts. An unknown key stops the deploy,
+/** Top-level keys `cello deploy` accepts. An unknown key stops the deploy,
  * so anything the Cloudflare adapter emits outside this set is dropped,
  * never passed through. Keep this ⊆ Outer's ACCEPTED_CONFIG_KEYS
  * (crates/outer/src/deploy/pipeline.rs): the deploy-root config the site
  * deploys with must validate there. */
-const CELLD_KEYS = [
+const CELLO_KEYS = [
   "$schema",
   "name",
   "main",
@@ -39,15 +39,15 @@ const CELLD_KEYS = [
   "r2_buckets",
 ];
 
-/** Write the deploy-root `dist/wrangler.json` celld deploys, derived from the
+/** Write the deploy-root `dist/wrangler.json` cello deploys, derived from the
  * adapter's own wrangler output (never handwritten): `main` rewrites to
  * deploy-root-relative `server/…`, the asset directory to `client`, and
  * `vars` to `{}` (Outer patches the site's real env at deploy time).
  * `run_worker_first` stays unset: assets serve first, which suits a
  * mostly-static site (prerendered pages come straight from the asset layer;
- * only `/api/*` reaches the Worker). celld refuses
+ * only `/api/*` reaches the Worker). cello refuses
  * `dist/client/.assetsignore` outright, so it is removed — its entries need
- * no replacement (`wrangler.json` is celld's config surface, never an
+ * no replacement (`wrangler.json` is cello's config surface, never an
  * asset). D1's `migrations_dir` resolves back to the repo folder, like the
  * app template: the adapter rewrites it relative to `dist/server/`
  * (`../../db/migrations`), which is wrong relative to this deploy root.
@@ -58,8 +58,8 @@ const CELLD_KEYS = [
  * `prerender = false` route (see the `newsletter` example) restores the
  * Worker on the next build. Runs on `astro:build:done`, after the adapter
  * has written its config. */
-const emitCelldConfig = () => ({
-  name: "celld-config",
+const emitCelloConfig = () => ({
+  name: "cello-config",
   hooks: {
     "astro:build:done": ({ dir }) => {
       const client = typeof dir === "string" && !dir.startsWith("file:") ? dir : fileURLToPath(dir);
@@ -89,7 +89,7 @@ const emitCelldConfig = () => ({
           : {};
 
       const config = {};
-      for (const key of CELLD_KEYS) {
+      for (const key of CELLO_KEYS) {
         if (key in adapter) {
           config[key] = adapter[key];
         }
@@ -102,7 +102,7 @@ const emitCelldConfig = () => ({
 
       // D1 is keyed by name: every entry carries the repo's migrations
       // folder (`db/migrations`, where `void db generate` writes) so Outer,
-      // celld and `void db` agree. A missing value would mean Void's default
+      // cello and `void db` agree. A missing value would mean Void's default
       // `migrations`, which does not exist — fall back to the template
       // convention.
       if (Array.isArray(config["d1_databases"])) {
@@ -157,11 +157,11 @@ export default defineConfig({
   build: { format: "file" },
   session: false,
   adapter: cloudflare({ configPath: "./.void-wrangler.jsonc", prerenderEnvironment: "node" }),
-  integrations: [ilha(), emitCelldConfig()],
+  integrations: [ilha(), emitCelloConfig()],
   vite: {
     plugins: [voidPlugin(), tailwindcss()],
     build: {
-      // No sourcemaps in production builds: celld uploads all of dist/,
+      // No sourcemaps in production builds: cello uploads all of dist/,
       // so maps would ship to every deploy for no benefit.
       sourcemap: false,
     },

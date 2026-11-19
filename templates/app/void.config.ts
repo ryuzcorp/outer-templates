@@ -1,8 +1,8 @@
 // The Worker, declared for Void (https://void.cloud): bindings, assets and
 // defaults in one typed file. `voidPlugin()` reads it (edits need a dev
 // server restart) and the build emits `dist/ssr/wrangler.json`, from which
-// `vite.config.ts` (`emitCelldConfig`) derives the deploy-root
-// `dist/wrangler.json` that Outer deploys with celld.
+// `vite.config.ts` (`emitCelloConfig`) derives the deploy-root
+// `dist/wrangler.json` that Outer deploys with cello.
 import { defineConfig } from "void/config";
 
 // The brand in one place: `brand.json` at the repo root names the app, and
@@ -41,7 +41,7 @@ export default defineConfig({
     ],
   },
   cloudflare: {
-    // The Worker name celld serves the app as.
+    // The Worker name cello serves the app as.
     name: "outer-app",
     // The app's D1 database, provisioned by Outer on first deploy. Read it
     // in server modules with `env.DB` from `cloudflare:workers`.
